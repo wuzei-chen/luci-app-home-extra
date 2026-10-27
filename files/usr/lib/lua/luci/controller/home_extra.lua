@@ -47,5 +47,26 @@ function api_status()
 		"awk '$3==\"0x2\" && $6==\"br-lan\" {n++} END{print n+0}' /proc/net/arp 2>/dev/null")
 	out.clients = tonumber(arp:match("%d+")) or 0
 
+	-- DNS（手动配置值）
+	out.dns = luci.sys.exec("uci -q get network.lan.dns 2>/dev/null"):gsub("%s+$", "")
+
+	-- WAN 出口信息：出口 IP / 运营商 / 城市（api.ip.sb/geoip，10 分钟缓存）
+	local fs = require "nixio.fs"
+	local fresh = false
+	local st = fs.stat("/tmp/wan_geo.json")
+	if st and (os.time() - st.mtime) < 600 then fresh = true end
+	local raw = ""
+	if fresh then
+		raw = luci.sys.exec("cat /tmp/wan_geo.json 2>/dev/null")
+	else
+		raw = luci.sys.exec("wget -q -O /tmp/wan_geo.json -T 6 'https://api.ip.sb/geoip' 2>/dev/null; cat /tmp/wan_geo.json 2>/dev/null")
+	end
+	local g = jsonc.parse(raw)
+	if type(g) == "table" and g.ip then
+		out.wan = { ip = g.ip, isp = g.isp or g.organization or "", city = g.city or "", region = g.region or "" }
+	else
+		out.wan = { reachable = false }
+	end
+
 	json_out(out)
 end
