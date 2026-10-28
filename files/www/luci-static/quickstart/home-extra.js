@@ -35,7 +35,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v16';
+	var VER = 'v17';
 
 	/* v16 骨架开关（默认开启）：
 	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
@@ -1027,8 +1027,50 @@
 		if (!he13Drawn) he13DrawAll();   /* 画布一进布局就先画出网格 +「采集中…」 */
 	}
 
+	/* ---------- 路由切换：卸载现场（v17）----------
+	 * LuCI 是 SPA：从首页点侧栏或快捷入口跳到别的页面时**整页不重载**，于是
+	 * html.he13 类、#maincontent 的内联塌缩、#he13-root 骨架全被带到了下一张页面上。
+	 * 实测点「网络向导」后 URL 变成 /cgi-bin/luci/admin/network_guide/pages/network，
+	 * 而 #maincontent 仍是 0×0 —— 页面只剩侧栏，向导内容一个字都看不到（用户报的
+	 * "之前做的内容不在了"就是这个）。所以：路由一旦离开 quickstart 就原样撤销现场。 */
+	function he13IsQuickstart() {
+		return location.pathname.indexOf('/admin/quickstart') >= 0;
+	}
+
+	/* 与 he13HideNative 里施加的 8 个属性一一对应，撤销时按同名删除 */
+	var HE13_MC_PROPS = ['display', 'position', 'width', 'height', 'overflow', 'margin', 'padding', 'border'];
+
+	/* 幂等：没有现场时立即返回，可以每 2s 被调用而不产生任何副作用。 */
+	function he13Teardown() {
+		var root = document.getElementById('he13-root');
+		var hadClass = document.documentElement.classList
+			&& document.documentElement.classList.contains('he13');
+		if (!root && !hadClass) return;
+
+		if (root && root.parentNode) root.parentNode.removeChild(root);
+		he13Drawn = false;
+
+		if (hadClass) document.documentElement.classList.remove('he13');
+
+		var mc = document.getElementById('maincontent');
+		if (mc && mc.getAttribute('data-he13-collapsed') === '1') {
+			for (var i = 0; i < HE13_MC_PROPS.length; i++) mc.style.removeProperty(HE13_MC_PROPS[i]);
+			mc.removeAttribute('data-he13-collapsed');
+		}
+
+		var hid = document.querySelectorAll('[data-he13-hidden]');
+		for (var j = 0; j < hid.length; j++) {
+			hid[j].style.removeProperty('display');
+			hid[j].removeAttribute('data-he13-hidden');
+		}
+	}
+
 	/* ---------- 主循环 ---------- */
 	function mount() {
+		/* 只对首页生效。SPA 跳到别的页面时：既不能继续改别人的 DOM，
+		 * 也必须把已经施加的改动撤干净——否则 #maincontent 还是 0×0、
+		 * html.he13 还压着 .card-container/.system，目标页内容就"消失"了。 */
+		if (!he13IsQuickstart()) { he13Teardown(); return; }
 		/* he13 模式下整段 v12 逻辑都跳过：它们操作的原生块已被塌缩（0 尺寸 + 裁剪），
 		 * 再跑 clampFlowChart 会和 echarts 的 ResizeObserver 打架（实测 canvas 被拉成
 		 * 50×1529 的垃圾尺寸、每 2s 一次拉锯）；buildPiePanel 建出的饼图也在裁剪区内，
@@ -1044,11 +1086,35 @@
 		mount();
 		setInterval(mount, 2000);
 		setInterval(function () {
-			/* v14：新骨架走 3s 采样（喂两张自绘图 + WAN 卡速率），不跑 v12 饼图轮询 */
-			if (HE13) { he13Sample(); return; }
+			/* v14：新骨架走 3s 采样（喂两张自绘图 + WAN 卡速率），不跑 v12 饼图轮询。
+			 * v17：离开首页就别再取数了（否则在别人的页面上白跑请求）。 */
+			if (HE13) { if (he13IsQuickstart()) he13Sample(); return; }
 			if (document.querySelector('.he-pie-panel')) refreshPie();
 		}, HE13_SAMPLE_MS);
 	}
+
+	/* 路由变化要立即响应，不能等下一个 2s tick（那 2s 里目标页是全空的）。
+	 * Vue Router 走 history.pushState；把两个方法各包一层，在 URL 已更新之后重跑 mount()：
+	 * 此时 he13IsQuickstart() 已返回 false，teardown 把塌缩与隐藏全部撤掉，
+	 * Vue 随后渲染的新页面就是干净的一张。popstate/hashchange 兜后退与 hash 模式。 */
+	function hookRoute() {
+		if (!window.history || !history.pushState) return;
+		if (history.__he13Hooked) return;
+		history.__he13Hooked = true;
+		function wrap(name) {
+			var orig = history[name];
+			history[name] = function () {
+				var ret = orig.apply(this, arguments);
+				try { mount(); } catch (e) { /* 路由钩子不吞页面 */ }
+				return ret;
+			};
+		}
+		wrap('pushState');
+		wrap('replaceState');
+		window.addEventListener('popstate', function () { try { mount(); } catch (e) {} });
+		window.addEventListener('hashchange', function () { try { mount(); } catch (e) {} });
+	}
+	hookRoute();
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', boot);
 	} else {
