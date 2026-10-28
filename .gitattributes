@@ -4,3 +4,4 @@
 # 所以显式钉死这两个扩展名的行尾为 LF，不依赖每个人的本地 git 配置。
 *.js  text eol=lf
 *.lua text eol=lf
+VERSION text eol=lf

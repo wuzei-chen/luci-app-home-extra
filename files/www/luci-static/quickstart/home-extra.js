@@ -35,10 +35,19 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v14';
+	var VER = 'v15';
 
-	/* v13 骨架开关：验收期每次显式带 ?he13=1，不做 cookie/localStorage 持久化 */
-	var HE13 = location.search.indexOf('he13=1') >= 0;
+	/* v13 骨架开关：
+	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage（本次浏览会话一直有效）；
+	 * 2) 不带参数 → 读 sessionStorage（登录跳转会丢 query，但同标签页内 sessionStorage 仍在）；
+	 * 3) 想关掉：URL 带 he13=0 即可。默认路径在"没开过的浏览器/新会话"里永远不受影响。 */
+	var HE13 = (function () {
+		try {
+			var m = /[?&#]he13=(1|0)/.exec(location.search + '&' + location.hash);
+			if (m) { sessionStorage.setItem('he13', m[1]); }
+			return sessionStorage.getItem('he13') === '1';
+		} catch (e) { return location.search.indexOf('he13=1') >= 0; }
+	}());
 
 	function el(tag, cls, text) {
 		var e = document.createElement(tag);
@@ -462,10 +471,15 @@
 			+ '#he13-root .he13-q-ic svg{width:22px;height:22px;}'
 			+ '#he13-root .he13-q-tx{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
 			/* 底部一行 */
-			+ '#he13-root .he13-foot{grid-column:1 / -1;display:flex;align-items:center;'
+			+ '#he13-root .he13-foot{grid-column:1 / -1;position:relative;display:flex;align-items:center;'
 			+ 'justify-content:space-between;font-size:12px;color:#8aa0aa;padding:0 4px;line-height:34px;}'
 			+ '#he13-root .he13-foot span{max-width:34%;overflow:hidden;text-overflow:ellipsis;'
 			+ 'white-space:nowrap;}'
+			/* 模块设置入口：原生齿轮随 48px 顶行被隐藏，这里给它一个替身（点击转发给 .model_btn）。
+			 * 绝对定位靠右 + 给 foot 预留右侧 90px，避免与"时间"列重叠。 */
+			+ '#he13-root .he13-gear{position:absolute;right:4px;top:0;line-height:34px;'
+			+ 'max-width:none;flex:none;cursor:pointer;user-select:none;color:#8aa0aa;}'
+			+ '#he13-root .he13-gear:hover{color:' + HE13_CYAN + ';}'
 			/* 窄屏：KPI 两列 */
 			+ '@media screen and (max-width:768px){'
 			+ '#he13-root{grid-template-columns:1fr;}'
@@ -529,6 +543,7 @@
 		+ '  <span id="he13-model">—</span>'
 		+ '  <span id="he13-fw">—</span>'
 		+ '  <span id="he13-time">—</span>'
+		+ '  <span id="he13-gear" title="模块设置">⚙ 模块设置</span>'
 		+ '</div>';
 
 	/* 采样状态：
@@ -587,6 +602,15 @@
 		root.innerHTML = HE13_HTML;
 		host.insertBefore(root, host.firstChild);
 		he13Drawn = false;          /* 新节点 = 画布尺寸需要重设 */
+		/* 模块设置入口：原生齿轮在 48px 顶行里、随 he13HideNative 一起被压掉了，
+		 * 这里放替身并把点击转发给原生按钮（Vue 的事件委托会接管后续）。
+		 * 注意：前提是面板保持为 row 的兄弟节点——若挪进 grid-container 会触发
+		 * hidePanels 的整块隐藏启发式（见 hidePanels 处注释）。 */
+		var gear = document.getElementById('he13-gear');
+		if (gear) gear.onclick = function () {
+			var mb = document.querySelector('.model_btn');
+			if (mb) mb.click();
+		};
 		return true;
 	}
 
