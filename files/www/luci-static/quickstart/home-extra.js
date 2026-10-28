@@ -641,6 +641,24 @@
 		for (var i = 0; i < kids.length; i++) {
 			var n = kids[i];
 			if (he13IsKeep(n)) continue;
+			/* #maincontent 特殊处理：不能用 display:none。
+			 * 模块设置弹层（.modal-overlay）被 Vue portal 到 .page-container——它就在
+			 * #maincontent 子树内，display:none 会连弹层一起藏掉（齿轮点了没反应的原因）。
+			 * 改用"塌缩"：absolute + 0 尺寸 + overflow hidden。原生内容因被裁剪而不可见；
+			 * 弹层是 position:fixed，不受祖先 overflow 裁剪影响（祖先链无 transform/filter，
+			 * 已实测：弹层 rect 1440×900、module-settings 内容 496px 正常显示）。 */
+			if (n.id === 'maincontent') {
+				n.style.setProperty('display', 'block', 'important');
+				n.style.setProperty('position', 'absolute', 'important');
+				n.style.setProperty('width', '0px', 'important');
+				n.style.setProperty('height', '0px', 'important');
+				n.style.setProperty('overflow', 'hidden', 'important');
+				n.style.setProperty('margin', '0', 'important');
+				n.style.setProperty('padding', '0', 'important');
+				n.style.setProperty('border', '0', 'important');
+				n.setAttribute('data-he13-collapsed', '1');
+				continue;
+			}
 			if (n.style && n.style.getPropertyValue('display') !== 'none') {
 				n.style.setProperty('display', 'none', 'important');
 				n.setAttribute('data-he13-hidden', '1');
@@ -994,12 +1012,16 @@
 
 	/* ---------- 主循环 ---------- */
 	function mount() {
+		/* he13 模式下整段 v12 逻辑都跳过：它们操作的原生块已被塌缩（0 尺寸 + 裁剪），
+		 * 再跑 clampFlowChart 会和 echarts 的 ResizeObserver 打架（实测 canvas 被拉成
+		 * 50×1529 的垃圾尺寸、每 2s 一次拉锯）；buildPiePanel 建出的饼图也在裁剪区内，
+		 * 纯属浪费。he13Mount 自身包含 CSS 注入/骨架/压原生/快捷/刷新全套，自洽。 */
+		if (HE13) { he13Mount(); return; }
 		injectCss();
 		clampFlowChart();
 		hidePanels();
 		buildPiePanel();
 		injectWanRows();
-		if (HE13) he13Mount();   /* 不带 ?he13=1 时这一行什么都不做 */
 	}
 	function boot() {
 		mount();
