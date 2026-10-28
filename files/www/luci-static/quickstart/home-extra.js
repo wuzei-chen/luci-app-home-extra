@@ -35,18 +35,23 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v15';
+	var VER = 'v16';
 
-	/* v13 骨架开关：
-	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage（本次浏览会话一直有效）；
-	 * 2) 不带参数 → 读 sessionStorage（登录跳转会丢 query，但同标签页内 sessionStorage 仍在）；
-	 * 3) 想关掉：URL 带 he13=0 即可。默认路径在"没开过的浏览器/新会话"里永远不受影响。 */
+	/* v16 骨架开关（默认开启）：
+	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
+	 * 2) 不带参数 → 默认 **开**，除非 sessionStorage 里明确记过 '0'（本标签页内一直关）；
+	 * 3) 回退旧首页：访问 ...?he13=0 一次即可，本标签页内持续有效，关掉标签页即恢复默认。
+	 * 之所以翻默认：开关只挂 URL 参数时，登录跳转会丢 query，导致用户永远看不到新骨架。 */
 	var HE13 = (function () {
+		var m = /[?&#]he13=(1|0)/.exec(location.search + '&' + location.hash);
 		try {
-			var m = /[?&#]he13=(1|0)/.exec(location.search + '&' + location.hash);
-			if (m) { sessionStorage.setItem('he13', m[1]); }
-			return sessionStorage.getItem('he13') === '1';
-		} catch (e) { return location.search.indexOf('he13=1') >= 0; }
+			if (m) { sessionStorage.setItem('he13', m[1]); return m[1] === '1'; }
+			if (sessionStorage.getItem('he13') === '0') return false;
+		} catch (e) {
+			/* 隐私模式/禁用 storage：退化为"只看本次 URL" */
+			return !(m && m[1] === '0');
+		}
+		return true;
 	}());
 
 	function el(tag, cls, text) {
@@ -472,8 +477,8 @@
 			+ '#he13-root .he13-q-tx{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
 			/* 底部一行 */
 			+ '#he13-root .he13-foot{grid-column:1 / -1;position:relative;display:flex;align-items:center;'
-			+ 'justify-content:space-between;font-size:12px;color:#8aa0aa;padding:0 4px;line-height:34px;}'
-			+ '#he13-root .he13-foot span{max-width:34%;overflow:hidden;text-overflow:ellipsis;'
+			+ 'justify-content:space-between;font-size:12px;color:#8aa0aa;padding:0 96px 0 4px;line-height:34px;}'
+			+ '#he13-root .he13-foot span{max-width:46%;overflow:hidden;text-overflow:ellipsis;'
 			+ 'white-space:nowrap;}'
 			/* 模块设置入口：原生齿轮随 48px 顶行被隐藏，这里给它一个替身（点击转发给 .model_btn）。
 			 * 绝对定位靠右 + 给 foot 预留右侧 90px，避免与"时间"列重叠。 */
@@ -539,9 +544,10 @@
 		+ '  <div class="he13-t"><span class="he13-bar"></span>快捷入口</div>'
 		+ '  <div class="he13-qgrid" id="he13-qgrid"></div>'
 		+ '</div>'
+	/* 底部一行：型号·固件并成一个字段（两个独立卡片/两列在窄屏会各占一段，
+	 * 显得像两张卡；这里固定成「型号 · 固件」一个短语），右侧时间，最右齿轮。 */
 		+ '<div class="he13-foot">'
-		+ '  <span id="he13-model">—</span>'
-		+ '  <span id="he13-fw">—</span>'
+		+ '  <span id="he13-mf">—</span>'
 		+ '  <span id="he13-time">—</span>'
 		+ '  <span id="he13-gear" title="模块设置">⚙ 模块设置</span>'
 		+ '</div>';
@@ -556,6 +562,8 @@
 	var he13Drawn = false;
 	var he13FloatSwept = false;
 	var HE13_QUICK_LABELS = ['内网配置', '终端', '固件更新', 'DNS配置', '软件源配置'];
+	/* 型号/固件两个字段来自同一份 status，到达时机可能不同，先存住再拼 */
+	var he13Ident = { model: '', fw: '' };
 
 	function he13Txt(id, text) {
 		var e = document.getElementById(id);
@@ -991,8 +999,13 @@
 				he13NetSnap = { rx: d.net.rx, tx: d.net.tx, t: Date.now() };
 			}
 
-			if (d.model) he13Txt('he13-model', d.model);
-			if (d.firmware) he13Txt('he13-fw', d.firmware);
+			/* 型号与固件合成一个字段：两者分两列会读成"两张卡"，合起来才是"这台设备是什么" 一件事。
+			 * 任一到达就渲染，缺的那个先不占位，避免出现「XG-040G-MD · —」。 */
+			if (d.model) he13Ident.model = d.model;
+			if (d.firmware) he13Ident.fw = d.firmware;
+			if (he13Ident.model || he13Ident.fw) {
+				he13Txt('he13-mf', [he13Ident.model, he13Ident.fw].filter(Boolean).join(' · '));
+			}
 			if (d.ltime) he13Txt('he13-time', d.ltime);
 		});
 	}
@@ -1001,8 +1014,12 @@
 	 * 全程判空后静默 return，不抛异常打断整页。 */
 	function he13Mount() {
 		if (!HE13) return;
-		injectCss13();
+		/* 顺序很重要：先把骨架插进 DOM，再上样式表。
+		 * injectCss13 会加 html.he13，而 html.he13 的第一条规则就是隐藏原生块 ——
+		 * 万一 he13Build 失败（挂载容器还没渲染出来），先加类就会得到一页空白。
+		 * 现在 build 失败直接 return，原生页面维持原样，下一次 2s tick 再试。 */
 		if (!he13Build()) return;
+		injectCss13();
 		he13HideNative();
 		he13Quick();
 		he13Update();
