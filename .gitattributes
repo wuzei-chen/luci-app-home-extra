@@ -1,7 +1,7 @@
-# 本仓库 core.autocrlf=true（全局配置），会让 checkout 出来的文件变成 CRLF。
-# 对部署到设备的前端/后端文件这是致命的：字节数与 md5 是验收基线，
-# 一旦被转成 CRLF，设备上的文件就与仓库 blob 不是同一份（"能跑但数据全歪"）。
-# 所以显式钉死这两个扩展名的行尾为 LF，不依赖每个人的本地 git 配置。
-*.js  text eol=lf
+*.sh text eol=lf
 *.lua text eol=lf
+*.js text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+*.md text eol=lf
 VERSION text eol=lf
