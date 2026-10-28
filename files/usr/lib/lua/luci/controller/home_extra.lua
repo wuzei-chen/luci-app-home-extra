@@ -1,5 +1,6 @@
--- home_extra.lua — quickstart 首页增强后端（v13, 2026-10-28）
--- status: NPU / 内存 / 负载 / ARP / DNS / WAN 出口 + v13 新增 conn/temp/cpu/uptime/net/model/firmware/ltime
+-- home_extra.lua — quickstart 首页增强后端（v19, 2026-10-28）
+-- status: NPU / 内存 / 负载 / ARP / DNS / WAN 出口 + conn/temp/cpu/uptime/net/model/firmware/ltime
+--         + v19 pon（PON 光链路：模式/光功率/模块温度电压/ONU 状态，来自 ponctl）
 --
 -- 设计约束（v13）：
 --   1) 新增字段全部合并进**一次** awk 调用（read_sysblock），不给 2 秒轮询加 fork；
@@ -259,6 +260,39 @@ function collect()
 
 	-- CPU：首次无基线 -> nil（对外由 api_status 输出裸 null，不是 0）
 	out.cpu = read_cpu()
+
+	------------------------------------------------------------------
+	-- v19 新增：PON 光链路（ponctl 走 generic netlink，实测单次 < 10ms）
+	------------------------------------------------------------------
+	-- 字段口径全部来自 ponctl status --json 的原始输出，不做任何推算：
+	--   frontend.rx_power_dbm / tx_power_dbm / temperature_celsius / voltage_volts / tx_bias_ma
+	--   line.optical_signal (bool) / lifecycle / active_mode / xgtc_sync / phy_ready
+	--   registration.onu_state（G.984 的 O1..O7）
+	-- 注意：无光时模组给出的是 -40.0 dBm 的**哨兵值**，不是真实测量值；
+	-- 前端必须结合 optical_signal 判读，不能把 -40 当"信号很弱"显示。
+	pcall(function()
+		local raw = luci.sys.exec("ponctl --device pon0 status --json 2>/dev/null")
+		local p = jsonc.parse(raw)
+		if type(p) ~= "table" then return end
+		local fe = type(p.frontend) == "table" and p.frontend or {}
+		local ln = type(p.line) == "table" and p.line or {}
+		local rg = type(p.registration) == "table" and p.registration or {}
+		if not (ln.active_mode or ln.lifecycle or fe.temperature_celsius) then return end
+		out.pon = {
+			mode   = ln.active_mode or ln.configured_mode or "",
+			life   = ln.lifecycle or "",
+			signal = ln.optical_signal and true or false,
+			syncs  = ln.xgtc_sync or "",
+			phy    = ln.phy_ready and true or false,
+			onu    = rg.onu_state or "",
+			rx     = tonumber(fe.rx_power_dbm),
+			tx     = tonumber(fe.tx_power_dbm),
+			temp   = tonumber(fe.temperature_celsius),
+			volt   = tonumber(fe.voltage_volts),
+			bias   = tonumber(fe.tx_bias_ma),
+			cal    = fe.calibration or ""
+		}
+	end)
 
 	-- 系统时间（路由器本地时间，零成本）
 	out.ltime = os.date("%Y-%m-%d %H:%M:%S")

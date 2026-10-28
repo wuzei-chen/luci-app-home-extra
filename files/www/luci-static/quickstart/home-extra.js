@@ -35,7 +35,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v18';
+	var VER = 'v19';
 
 	/* v16 骨架开关（默认开启）：
 	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
@@ -485,6 +485,20 @@
 			+ '#he13-root .he13-gear{position:absolute;right:4px;top:0;line-height:34px;'
 			+ 'max-width:none;flex:none;cursor:pointer;user-select:none;color:#8aa0aa;}'
 			+ '#he13-root .he13-gear:hover{color:' + HE13_CYAN + ';}'
+			/* PON 光链路细条（v19）：整行 6 格，格内 label 上、值下 */
+			+ '#he13-root .he13-pon{grid-column:1 / -1;padding:10px 16px 12px;}'
+			+ '#he13-root .he13-pon-hd{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#1f2d33;}'
+			+ '#he13-root .he13-pon-st{margin-left:auto;display:flex;align-items:center;gap:6px;'
+			+ 'font-size:12px;font-weight:500;color:#8aa0aa;}'
+			+ '#he13-root .he13-pon-dot{width:8px;height:8px;border-radius:50%;background:#c8d3d9;}'
+			+ '#he13-root .he13-pon-dot.is-bad{background:#e05252;}'
+			+ '#he13-root .he13-pon-dot.is-ok{background:#2eae6b;}'
+			+ '#he13-root .he13-pon-grid{margin-top:8px;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;}'
+			+ '#he13-root .he13-pl{background:#f7fafc;border-radius:8px;padding:6px 10px;min-width:0;}'
+			+ '#he13-root .he13-pl-k{display:block;font-size:11px;color:#8aa0aa;line-height:15px;}'
+			+ '#he13-root .he13-pl-v{display:block;font-size:14px;font-weight:600;color:#1f2d33;'
+			+ 'line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+			+ '#he13-root .he13-pl-v.is-off{color:#b3c1c9;font-weight:500;}'
 			/* 模块设置弹层（v18）：position:fixed 挂在 #he13-root 上，祖先都是普通流容器，
 			 * 不会被 .main-right 的 overflow 裁掉（实测 rect 等于视口）。 */
 			+ '#he13-root .he13-set{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3000;display:none;}'
@@ -517,6 +531,7 @@
 			+ '#he13-root{grid-template-columns:1fr;}'
 			+ '#he13-root .he13-kpi{grid-template-columns:1fr 1fr;}'
 			+ '#he13-root .he13-qgrid{grid-template-columns:repeat(3,1fr);}'
+			+ '#he13-root .he13-pon-grid{grid-template-columns:repeat(3,1fr);}'
 			+ '}';
 		document.head.appendChild(s);
 	}
@@ -545,6 +560,28 @@
 		+ '    <div class="he13-k-lab">CPU · 温度 · 内存</div>'
 		+ '    <div class="he13-k-val" id="he13-load">—</div>'
 		+ '    <div class="he13-k-sub">实时采样</div>'
+		+ '  </div>'
+		+ '</div>'
+		/* v19 PON 光链路：整行细条，6 个格。数据全部来自 ponctl status --json，
+		 * 无光时模组给 -40.0 dBm 的哨兵值——必须结合 signal 判读，显示"无光"而不是 -40。 */
+		+ '<div class="he13-card he13-pon" id="he13-card-pon">'
+		+ '  <div class="he13-pon-hd"><span class="he13-bar"></span><span>PON 光链路</span>'
+		+ '    <span class="he13-tag" id="he13-pon-mode">—</span>'
+		+ '    <span class="he13-pon-st"><span class="he13-pon-dot" id="he13-pon-dot"></span>'
+		+ '      <span id="he13-pon-state">—</span></span></div>'
+		+ '  <div class="he13-pon-grid">'
+		+ '    <div class="he13-pl"><span class="he13-pl-k">接收光功率</span>'
+		+ '      <span class="he13-pl-v" id="he13-pon-rx">—</span></div>'
+		+ '    <div class="he13-pl"><span class="he13-pl-k">发送光功率</span>'
+		+ '      <span class="he13-pl-v" id="he13-pon-tx">—</span></div>'
+		+ '    <div class="he13-pl"><span class="he13-pl-k">模块温度</span>'
+		+ '      <span class="he13-pl-v" id="he13-pon-temp">—</span></div>'
+		+ '    <div class="he13-pl"><span class="he13-pl-k">工作电压</span>'
+		+ '      <span class="he13-pl-v" id="he13-pon-volt">—</span></div>'
+		+ '    <div class="he13-pl"><span class="he13-pl-k">偏置电流</span>'
+		+ '      <span class="he13-pl-v" id="he13-pon-bias">—</span></div>'
+		+ '    <div class="he13-pl"><span class="he13-pl-k">ONU 状态</span>'
+		+ '      <span class="he13-pl-v" id="he13-pon-onu">—</span></div>'
 		+ '  </div>'
 		+ '</div>'
 		+ '<div class="he13-card" id="he13-card-wan">'
@@ -627,6 +664,68 @@
 		if (d > 0) return d + '天 ' + h + '小时';
 		if (h > 0) return h + '小时 ' + m + '分';
 		return m + '分 ' + (s % 60) + '秒';
+	}
+
+	/* ---------- PON 光链路文案（v19）----------
+	 * 只做"翻译"，不做推算：数值原样来自 ponctl，-40 dBm 是无光哨兵而不是弱信号。 */
+	var HE13_PON_LIFE = {
+		'wait-optical-signal': '未接通光信号',
+		'operational': '链路正常',
+		'ready': '光信号就绪',
+		'init': '模块初始化',
+		'hunt': '搜集中'
+	};
+	var HE13_PON_ONU = {
+		O1: 'O1 初始', O2: 'O2 待测距', O3: 'O3 测距中', O4: 'O4 已测距',
+		O5: 'O5 运行', O6: 'O6 中断', O7: 'O7 停摆'
+	};
+
+	function he13PonMode(m) {
+		var s = (m || '').toLowerCase();
+		if (!s) return '—';
+		if (s === 'xgpon') return 'XGPON';
+		if (s === 'xgspon') return 'XGSPON';
+		if (s === 'gpon') return 'GPON';
+		if (s.indexOf('epon') === 0) return 'EPON';
+		return s.toUpperCase();
+	}
+
+	function he13Dbm(v, signal) {
+		if (!signal || typeof v !== 'number' || !(v > -39.9)) return '无光';
+		return v.toFixed(1) + ' dBm';
+	}
+
+	function he13SetVal(id, text, off) {
+		var e = document.getElementById(id);
+		if (!e) return;
+		if (e.textContent !== text) e.textContent = text;
+		if (off) e.className = 'he13-pl-v is-off';
+		else e.className = 'he13-pl-v';
+	}
+
+	function he13UpdatePon(pn) {
+		if (!pn) return;
+		var ok = !!pn.signal;
+		he13Txt('he13-pon-mode', he13PonMode(pn.mode));
+		he13Txt('he13-pon-state', ok
+			? (pn.phy ? '链路正常' : '光信号就绪')
+			: (HE13_PON_LIFE[pn.life] || pn.life || '—'));
+		var dot = document.getElementById('he13-pon-dot');
+		if (dot) dot.className = 'he13-pon-dot ' + (ok ? 'is-ok' : 'is-bad');
+
+		var rx = he13Dbm(pn.rx, ok), tx = he13Dbm(pn.tx, ok);
+		he13SetVal('he13-pon-rx', rx, rx === '无光');
+		he13SetVal('he13-pon-tx', tx, tx === '无光');
+		he13SetVal('he13-pon-temp',
+			typeof pn.temp === 'number' && pn.temp > 0 ? pn.temp.toFixed(1) + ' ℃' : '—',
+			!(typeof pn.temp === 'number' && pn.temp > 0));
+		he13SetVal('he13-pon-volt',
+			typeof pn.volt === 'number' && pn.volt > 0 ? pn.volt.toFixed(2) + ' V' : '—',
+			!(typeof pn.volt === 'number' && pn.volt > 0));
+		he13SetVal('he13-pon-bias',
+			typeof pn.bias === 'number' ? pn.bias.toFixed(1) + ' mA' : '—',
+			!(typeof pn.bias === 'number') || pn.bias === 0);
+		he13SetVal('he13-pon-onu', HE13_PON_ONU[pn.onu] || pn.onu || '—', !ok);
 	}
 
 	/* 挂载点：优先 .main-right（主题的稳定滚动容器，root 作为它的第一个子节点），
@@ -795,6 +894,7 @@
 	 * （齿轮入口就在那一行里，允许隐藏等于把自己锁在门外）。 */
 	var HE13_MODS = [
 		{ id: 'kpi', name: '指标行', desc: '运行时间 / 终端 / 连接数 / CPU·温度·内存', sel: '#he13-root .he13-kpi' },
+		{ id: 'pon', name: 'PON 光链路', desc: '模式 / 光功率 / 模块温度电压 / ONU 状态', sel: '#he13-card-pon' },
 		{ id: 'wan', name: 'WAN 出口', desc: '运营商 / 出口 IP / 本机速率 + 迷你曲线', sel: '#he13-card-wan' },
 		{ id: 'rate', name: '实时速率', desc: '60 点 / 3 分钟上下行面积图', sel: '#he13-card-rate' },
 		{ id: 'quick', name: '快捷入口', desc: '五个常用配置入口', sel: '#he13-card-quick' }
@@ -1093,6 +1193,8 @@
 	function he13Update() {
 		fetchStatus(function (d) {
 			if (!d || typeof d !== 'object') return;
+
+			if (d.pon) he13UpdatePon(d.pon);
 
 			var up = (typeof d.uptime === 'number' && d.uptime > 0) ? he13Uptime(d.uptime) : '—';
 			he13Txt('he13-uptime', up);
