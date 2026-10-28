@@ -35,7 +35,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v17';
+	var VER = 'v18';
 
 	/* v16 骨架开关（默认开启）：
 	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
@@ -485,6 +485,33 @@
 			+ '#he13-root .he13-gear{position:absolute;right:4px;top:0;line-height:34px;'
 			+ 'max-width:none;flex:none;cursor:pointer;user-select:none;color:#8aa0aa;}'
 			+ '#he13-root .he13-gear:hover{color:' + HE13_CYAN + ';}'
+			/* 模块设置弹层（v18）：position:fixed 挂在 #he13-root 上，祖先都是普通流容器，
+			 * 不会被 .main-right 的 overflow 裁掉（实测 rect 等于视口）。 */
+			+ '#he13-root .he13-set{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3000;display:none;}'
+			+ '#he13-root .he13-set.is-open{display:block;}'
+			+ '#he13-root .he13-set-mask{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.42);}'
+			+ '#he13-root .he13-set-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);'
+			+ 'width:420px;max-width:calc(100% - 32px);background:#fff;border-radius:12px;box-sizing:border-box;'
+			+ 'box-shadow:0 12px 40px rgba(0,0,0,.18);padding:16px 18px 14px;}'
+			+ '#he13-root .he13-set-hd{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:#1f2d33;}'
+			+ '#he13-root .he13-set-x{margin-left:auto;font-size:20px;line-height:18px;color:#8aa0aa;cursor:pointer;'
+			+ 'padding:0 4px;user-select:none;}'
+			+ '#he13-root .he13-set-x:hover{color:#1f2d33;}'
+			+ '#he13-root .he13-set-list{margin-top:10px;}'
+			+ '#he13-root .he13-set-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f2f4f6;}'
+			+ '#he13-root .he13-set-row:last-child{border-bottom:0;}'
+			+ '#he13-root .he13-set-tx{flex:1;min-width:0;}'
+			+ '#he13-root .he13-set-nm{font-size:13px;font-weight:500;color:#1f2d33;line-height:18px;}'
+			+ '#he13-root .he13-set-ds{font-size:11px;color:#8aa0aa;line-height:16px;}'
+			+ '#he13-root .he13-set-lock{font-size:11px;color:#b3c1c9;flex:none;}'
+			+ '#he13-root .he13-sw{position:relative;width:40px;height:22px;border-radius:11px;background:#dfe6ea;'
+			+ 'cursor:pointer;flex:none;transition:background .15s;}'
+			+ '#he13-root .he13-sw::after{content:"";position:absolute;left:2px;top:2px;width:18px;height:18px;'
+			+ 'border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s;}'
+			+ '#he13-root .he13-sw.is-on{background:' + HE13_CYAN + ';}'
+			+ '#he13-root .he13-sw.is-on::after{left:20px;}'
+			+ '#he13-root .he13-set-ft{margin-top:10px;display:flex;justify-content:flex-end;}'
+			+ '#he13-root .he13-set-all{font-size:12px;color:' + HE13_CYAN + ';cursor:pointer;user-select:none;}'
 			/* 窄屏：KPI 两列 */
 			+ '@media screen and (max-width:768px){'
 			+ '#he13-root{grid-template-columns:1fr;}'
@@ -520,7 +547,7 @@
 		+ '    <div class="he13-k-sub">实时采样</div>'
 		+ '  </div>'
 		+ '</div>'
-		+ '<div class="he13-card">'
+		+ '<div class="he13-card" id="he13-card-wan">'
 		+ '  <div class="he13-t"><span class="he13-bar"></span>WAN 出口</div>'
 		+ '  <div class="he13-row"><span class="he13-lb">运营商</span><span class="he13-vl" id="he13-isp">—</span></div>'
 		+ '  <div class="he13-row"><span class="he13-lb">出口 IP</span><span class="he13-vl" id="he13-ip">—</span></div>'
@@ -530,7 +557,7 @@
 		+ '  <div class="he13-row"><span class="he13-lb">本机上行</span><span class="he13-vl" id="he13-tx">—</span></div>'
 		+ '  <div class="he13-spark"><canvas id="he13-sparkcv"></canvas></div>'
 		+ '</div>'
-		+ '<div class="he13-card">'
+		+ '<div class="he13-card" id="he13-card-rate">'
 		+ '  <div class="he13-t"><span class="he13-bar"></span>实时速率'
 		+ '<span class="he13-tag" id="he13-tag">本机</span></div>'
 		+ '  <div class="he13-chart">'
@@ -540,16 +567,29 @@
 		+ '  <div class="he13-row"><span class="he13-lb">上下行 · 60 点 / 3 分钟</span>'
 		+ '<span class="he13-vl" id="he13-chart-sum">↓ — ↑ —</span></div>'
 		+ '</div>'
-		+ '<div class="he13-card he13-quick">'
+		+ '<div class="he13-card he13-quick" id="he13-card-quick">'
 		+ '  <div class="he13-t"><span class="he13-bar"></span>快捷入口</div>'
 		+ '  <div class="he13-qgrid" id="he13-qgrid"></div>'
 		+ '</div>'
 	/* 底部一行：型号·固件并成一个字段（两个独立卡片/两列在窄屏会各占一段，
 	 * 显得像两张卡；这里固定成「型号 · 固件」一个短语），右侧时间，最右齿轮。 */
-		+ '<div class="he13-foot">'
+		+ '<div class="he13-foot" id="he13-foot">'
 		+ '  <span id="he13-mf">—</span>'
 		+ '  <span id="he13-time">—</span>'
 		+ '  <span id="he13-gear" title="模块设置">⚙ 模块设置</span>'
+		+ '</div>'
+		/* v18 模块设置弹层：原生那个 10 项开关控制的是被隐藏的原生块，勾了没有任何效果
+		 * （用户报"设置项已经和实际不一致"）。这里改成自绘面板，只列骨架上真实存在的
+		 * 模块，开关直接改骨架显隐并记进 localStorage。底部信息行常显——齿轮就在里面，
+		 * 允许隐藏会把自己锁在门外。 */
+		+ '<div class="he13-set" id="he13-set">'
+		+ '  <div class="he13-set-mask" id="he13-set-mask"></div>'
+		+ '  <div class="he13-set-card">'
+		+ '    <div class="he13-set-hd"><span class="he13-bar"></span>模块设置'
+		+ '      <span class="he13-set-x" id="he13-set-x" title="关闭">×</span></div>'
+		+ '    <div class="he13-set-list" id="he13-set-list"></div>'
+		+ '    <div class="he13-set-ft"><span class="he13-set-all" id="he13-set-all">全部显示</span></div>'
+		+ '  </div>'
 		+ '</div>';
 
 	/* 采样状态：
@@ -614,11 +654,21 @@
 		 * 这里放替身并把点击转发给原生按钮（Vue 的事件委托会接管后续）。
 		 * 注意：前提是面板保持为 row 的兄弟节点——若挪进 grid-container 会触发
 		 * hidePanels 的整块隐藏启发式（见 hidePanels 处注释）。 */
+		/* 模块设置入口（v18）：不再转发给原生 .model_btn —— 那个弹层列的是被隐藏的
+		 * 原生模块，勾选无效。改为打开自绘面板。 */
 		var gear = document.getElementById('he13-gear');
-		if (gear) gear.onclick = function () {
-			var mb = document.querySelector('.model_btn');
-			if (mb) mb.click();
+		if (gear) gear.onclick = function () { he13BuildSet(); he13SetOpen(true); };
+		var mask = document.getElementById('he13-set-mask');
+		if (mask) mask.onclick = function () { he13SetOpen(false); };
+		var x = document.getElementById('he13-set-x');
+		if (x) x.onclick = function () { he13SetOpen(false); };
+		var all = document.getElementById('he13-set-all');
+		if (all) all.onclick = function () {
+			he13Off = {};
+			he13ApplyMods();
+			he13SaveMods();
 		};
+		he13BuildSet();
 		return true;
 	}
 
@@ -735,6 +785,94 @@
 			});
 			grid.appendChild(cell);
 		});
+	}
+
+	/* ---------- 模块设置（v18）----------
+	 * 原生弹层列的是 iStoreOS 首页的 10 个原生模块（网络流量/网络接口状态/磁盘信息/
+	 * 存储服务/下载服务/远程域名…），而原生块在这套骨架里已经被隐藏，勾选或取消对它
+	 * 没有任何可见效果 —— 用户说的"设置项已经和实际不一致"就是这个。
+	 * 这里只暴露骨架上真实存在、且开关真能改变可见性的模块；底部信息行常显
+	 * （齿轮入口就在那一行里，允许隐藏等于把自己锁在门外）。 */
+	var HE13_MODS = [
+		{ id: 'kpi', name: '指标行', desc: '运行时间 / 终端 / 连接数 / CPU·温度·内存', sel: '#he13-root .he13-kpi' },
+		{ id: 'wan', name: 'WAN 出口', desc: '运营商 / 出口 IP / 本机速率 + 迷你曲线', sel: '#he13-card-wan' },
+		{ id: 'rate', name: '实时速率', desc: '60 点 / 3 分钟上下行面积图', sel: '#he13-card-rate' },
+		{ id: 'quick', name: '快捷入口', desc: '五个常用配置入口', sel: '#he13-card-quick' }
+	];
+	var HE13_MOD_KEY = 'he13.mods';
+	var he13Off = {};
+
+	function he13LoadMods() {
+		try {
+			var raw = localStorage.getItem(HE13_MOD_KEY);
+			if (!raw) return;
+			var arr = JSON.parse(raw);
+			if (!arr || typeof arr.length !== 'number') return;
+			for (var i = 0; i < arr.length; i++) { if (arr[i]) he13Off[arr[i]] = 1; }
+		} catch (e) { he13Off = {}; }
+	}
+
+	function he13SaveMods() {
+		try {
+			var out = [];
+			for (var k in he13Off) { if (he13Off[k]) out.push(k); }
+			localStorage.setItem(HE13_MOD_KEY, JSON.stringify(out));
+		} catch (e) { /* 隐私模式写不了就只在本次会话生效 */ }
+	}
+
+	function he13SyncMods() {
+		var sws = document.querySelectorAll('#he13-set-list .he13-sw');
+		for (var i = 0; i < sws.length; i++) {
+			var id = sws[i].getAttribute('data-mod');
+			if (he13Off[id]) sws[i].classList.remove('is-on');
+			else sws[i].classList.add('is-on');
+		}
+	}
+
+	function he13ApplyMods() {
+		for (var i = 0; i < HE13_MODS.length; i++) {
+			var node = document.querySelector(HE13_MODS[i].sel);
+			if (node) node.style.display = he13Off[HE13_MODS[i].id] ? 'none' : '';
+		}
+		he13SyncMods();
+	}
+
+	function he13BuildSet() {
+		var list = document.getElementById('he13-set-list');
+		if (!list) return;
+		if (list.getAttribute('data-built') !== '1') {
+			var html = '';
+			for (var i = 0; i < HE13_MODS.length; i++) {
+				html += '<div class="he13-set-row">'
+					+ '<div class="he13-set-tx"><div class="he13-set-nm">' + HE13_MODS[i].name + '</div>'
+					+ '<div class="he13-set-ds">' + HE13_MODS[i].desc + '</div></div>'
+					+ '<div class="he13-sw" data-mod="' + HE13_MODS[i].id + '"></div>'
+					+ '</div>';
+			}
+			html += '<div class="he13-set-row">'
+				+ '<div class="he13-set-tx"><div class="he13-set-nm">底部信息</div>'
+				+ '<div class="he13-set-ds">型号 · 固件 · 时间（齿轮入口在这一行，常显）</div></div>'
+				+ '<span class="he13-set-lock">常显</span></div>';
+			list.innerHTML = html;
+			list.setAttribute('data-built', '1');
+			var sws = list.querySelectorAll('.he13-sw');
+			for (var j = 0; j < sws.length; j++) {
+				sws[j].onclick = function () {
+					var id = this.getAttribute('data-mod');
+					he13Off[id] = he13Off[id] ? 0 : 1;
+					he13ApplyMods();
+					he13SaveMods();
+				};
+			}
+		}
+		he13ApplyMods();
+	}
+
+	function he13SetOpen(open) {
+		var box = document.getElementById('he13-set');
+		if (!box) return;
+		if (open) box.classList.add('is-open');
+		else box.classList.remove('is-open');
 	}
 
 	/* ---------- 自绘图表（v14）----------
@@ -1083,6 +1221,7 @@
 		injectWanRows();
 	}
 	function boot() {
+		he13LoadMods();
 		mount();
 		setInterval(mount, 2000);
 		setInterval(function () {
