@@ -26,7 +26,7 @@ if ! grep -q 'home-extra.js' "$MAIN"; then
 	sed -i 's|<%+footer%>|<script src="/luci-static/quickstart/home-extra.js?v='"$VERSION"'"></script>\n<%+footer%>|' "$MAIN"
 	echo "main.htm 补丁已写入"
 else
-	sed -i 's|home-extra.js?v=[0-9]*|home-extra.js?v='"$VERSION"'|' "$MAIN"
+	sed -i 's|home-extra.js?v=[0-9][0-9.]*|home-extra.js?v='"$VERSION"'|' "$MAIN"
 	echo "main.htm 补丁已存在，版本参数更新为 v$VERSION"
 fi
 
