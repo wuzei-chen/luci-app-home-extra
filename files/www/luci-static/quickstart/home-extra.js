@@ -35,7 +35,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v20';
+	var VER = 'v21';
 
 	/* v16 骨架开关（默认开启）：
 	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
@@ -456,6 +456,10 @@
 			+ '#he13-root .he13-lb{color:#8aa0aa;flex:none;}'
 			+ '#he13-root .he13-vl{color:#1f2d33;font-weight:500;max-width:62%;overflow:hidden;'
 			+ 'text-overflow:ellipsis;white-space:nowrap;text-align:right;}'
+			/* IPv6 用等宽小字：地址长、字符密，等宽更好认；缺失态置灰 */
+			+ '#he13-root .he13-mono{font-family:ui-monospace,Menlo,Consolas,"DejaVu Sans Mono",monospace;'
+			+ 'font-size:12px;letter-spacing:-0.2px;}'
+			+ '#he13-root .he13-vl.is-off{color:#b3c1c9;font-weight:500;}'
 			/* 自绘面积图容器：canvas 位图尺寸由 JS 按 dpr 设置，CSS 只管布局盒子 */
 			+ '#he13-root .he13-chart{position:relative;height:' + HE13_AREA_H + 'px;}'
 			+ '#he13-root .he13-chart canvas{display:block;width:100%;height:' + HE13_AREA_H + 'px;}'
@@ -598,6 +602,14 @@
 		+ '  <div class="he13-t"><span class="he13-bar"></span>WAN 出口</div>'
 		+ '  <div class="he13-row"><span class="he13-lb">运营商</span><span class="he13-vl" id="he13-isp">—</span></div>'
 		+ '  <div class="he13-row"><span class="he13-lb">出口 IP</span><span class="he13-vl" id="he13-ip">—</span></div>'
+		/* v21 IPv6 三行：全局地址 / 默认网关 / eth0 链路本地。地址最长 39 字符，
+		 * 卡片右列放不下 —— 省略号截断 + title 给全文，鼠标悬停可看完整地址。 */
+		+ '  <div class="he13-row"><span class="he13-lb">IPv6 地址</span>'
+		+ '    <span class="he13-vl he13-mono" id="he13-v6">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">IPv6 网关</span>'
+		+ '    <span class="he13-vl he13-mono" id="he13-v6gw">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">IPv6 本地</span>'
+		+ '    <span class="he13-vl he13-mono" id="he13-v6ll">—</span></div>'
 		+ '  <div class="he13-row"><span class="he13-lb">接入方式</span><span class="he13-vl">旁挂桥接</span></div>'
 		+ '  <div class="he13-row"><span class="he13-lb">运行时间</span><span class="he13-vl" id="he13-ut2">—</span></div>'
 		+ '  <div class="he13-row"><span class="he13-lb">本机下行</span><span class="he13-vl" id="he13-rx">—</span></div>'
@@ -790,6 +802,34 @@
 		}
 		he13PortPrev = { t: now, m: next };
 		he13Txt('he13-port-sum', '在线 ' + online + ' / ' + list.length);
+	}
+
+	/* ---------- IPv6（v21）----------
+	 * 三个值都来自 /proc/net/if_inet6 与 /proc/net/ipv6_route，后端只做格式转换：
+	 *   addr = scope 00 且非 ULA(fd/fc) 的全局地址（当前环境没有，如实显示「未获取」）
+	 *   gw   = IPv6 默认路由的下一跳（没有默认路由就是「无」）
+	 *   ll   = eth0 的链路本地地址（fe80::…，永远存在，排查时最有用）
+	 * 缺失态一律置灰，不拿链路本地冒充"公网 IPv6"。 */
+	function he13SetRow(id, text, title, off) {
+		var e = document.getElementById(id);
+		if (!e) return;
+		if (e.textContent !== text) e.textContent = text;
+		if (title) e.setAttribute('title', title);
+		else e.removeAttribute('title');
+		var cls = 'he13-vl he13-mono' + (off ? ' is-off' : '');
+		if (e.className !== cls) e.className = cls;
+	}
+
+	function he13UpdateV6(v6) {
+		var hasA = !!(v6 && v6.addr);
+		var hasG = !!(v6 && v6.gw);
+		var hasL = !!(v6 && v6.ll);
+		he13SetRow('he13-v6', hasA ? v6.addr : '未获取',
+			hasA ? (v6.addr + (v6.plen ? '/' + v6.plen : '')) : '上游未下发全局 IPv6 地址（无 RA/PD）',
+			!hasA);
+		he13SetRow('he13-v6gw', hasG ? v6.gw : '无',
+			hasG ? v6.gw : '没有 IPv6 默认路由', !hasG);
+		he13SetRow('he13-v6ll', hasL ? v6.ll : '无', hasL ? 'eth0 链路本地地址' : '', !hasL);
 	}
 
 	/* 挂载点：优先 .main-right（主题的稳定滚动容器，root 作为它的第一个子节点），
@@ -1261,6 +1301,7 @@
 
 			if (d.pon) he13UpdatePon(d.pon);
 			if (d.ports && d.ports.length) he13UpdatePorts(d.ports);
+			he13UpdateV6(d.ipv6);
 
 			var up = (typeof d.uptime === 'number' && d.uptime > 0) ? he13Uptime(d.uptime) : '—';
 			he13Txt('he13-uptime', up);

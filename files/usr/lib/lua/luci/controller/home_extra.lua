@@ -46,6 +46,8 @@ local SYS_FILES = table.concat({
 	"/sys/class/net/br-lan/statistics/tx_bytes",
 	"/sys/class/thermal/thermal_zone0/temp",
 	"/sys/class/thermal/thermal_zone1/temp",
+	"/proc/net/if_inet6",
+	"/proc/net/ipv6_route",
 	"/tmp/sysinfo/model",
 	"/etc/openwrt_release"
 }, " ")
@@ -95,6 +97,11 @@ local SYS_AWK = table.concat({
 	'FILENAME ~ /\\/net\\/lan[0-9]+\\/operstate$/{',
 	'n=FILENAME;sub(/^.*\\/net\\//,"",n);sub(/\\/.*/,"",n);POS[n]=$1;next}',
 	'FILENAME=="/tmp/sysinfo/model"{md="";for(q=1;q<=NF;q++)md=md (q>1?" ":"") $q;next}',
+	-- v21：IPv6。if_inet6 每行：<32位hex地址> <ifindex> <前缀长度hex> <scope hex> <flags> <dev>
+	--       ipv6_route 里默认路由 = dest 全 0 且 destPlen 00，第 5 字段是下一跳、第 10 是出口
+	'FILENAME=="/proc/net/if_inet6"{printf "I6 %s %s %s %s\\n",$1,$3,$4,$6;next}',
+	'FILENAME=="/proc/net/ipv6_route"{',
+	'if($1=="00000000000000000000000000000000"&&$2=="00")printf "R6 %s %s\\n",$5,$10;next}',
 	'FILENAME=="/etc/openwrt_release"{if($1 ~ /^DISTRIB_DESCRIPTION=/){',
 	'fw=$0;sub(/^DISTRIB_DESCRIPTION=/,"",fw)};next}',
 	'END{printf "STAT %d %d %d %d %d %d %d %d %d %d %d %d\\n",',
@@ -110,6 +117,38 @@ local function sys_cmd()
 	return "F=''; for f in " .. SYS_FILES .. " " .. port_files()
 		.. '; do [ -e "$f" ] && F="$F $f"; done; '
 		.. "awk '" .. SYS_AWK .. "' $F 2>/dev/null"
+end
+
+-- v21：/proc/net/if_inet6 给的是 32 位无冒号 hex，这里转成标准写法（含 :: 压缩）。
+-- 只做格式转换，不做任何"可用性"推断。
+local function hex2v6(h)
+	if type(h) ~= "string" or #h ~= 32 or h:match("^%x+$") == nil then return nil end
+	local g = {}
+	for i = 1, 8 do
+		local v = h:sub((i - 1) * 4 + 1, i * 4):gsub("^0+", "")
+		if v == "" then v = "0" end
+		g[i] = v:lower()
+	end
+	-- 最长连续全零段（>=2）压成 ::，与 ip -6 addr 的展示一致
+	local bestS, bestL, curS, curL = 0, 0, 0, 0
+	for i = 1, 8 do
+		if g[i] == "0" then
+			if curL == 0 then curS = i end
+			curL = curL + 1
+			if curL > bestL then bestS, bestL = curS, curL end
+		else
+			curL = 0
+		end
+	end
+	if bestL >= 2 then
+		local left = bestS > 1 and table.concat(g, ":", 1, bestS - 1) or ""
+		local right = (bestS + bestL) <= 8 and table.concat(g, ":", bestS + bestL, 8) or ""
+		if left == "" and right == "" then return "::" end
+		if left == "" then return "::" .. right end
+		if right == "" then return left .. "::" end
+		return left .. "::" .. right
+	end
+	return table.concat(g, ":")
 end
 
 -- 解析 awk 输出。任何一步取不到就返回 nil（调用方逐项降级）。
@@ -137,12 +176,30 @@ local function read_sysblock()
 				up = (pos == "up")
 			}
 		end
+		-- v21：IPv6 三件套。scope 00 = global（ULA fd/fc 也算 global scope，必须排除，
+		-- 否则会把内网 ULA 当成"WAN IPv6"报出去）；scope 20 = link。
+		local v6 = {}
+		for addr, plen, scope, dev in line:gmatch("I6 (%x+) (%x+) (%x+) (%S+)") do
+			local s = hex2v6(addr)
+			local head = addr:sub(1, 2):lower()
+			if s and scope == "00" and head ~= "fd" and head ~= "fc" then
+				if not v6.addr then v6.addr, v6.plen, v6.dev = s, tonumber(plen, 16), dev end
+			elseif s and scope == "20" and dev == "eth0" and not v6.ll then
+				v6.ll = s
+			end
+		end
+		local gw, gwdev = line:match("R6 (%x+) (%S+)")
+		if gw and gw:match("^0+$") == nil then
+			v6.gw = hex2v6(gw) or nil
+			v6.gwdev = gwdev
+		end
 		return {
 			tcp = v[1], udp = v[2], icmp = v[3], other = v[4],
 			uptime = v[5], temp = v[6], leases = v[7],
 			rx = v[8], tx = v[9],
 			mem_total = v[10], mem_avail = v[11], arp = v[12],
 			ports = ports,
+			v6 = v6,
 			load = load:gsub("^%s+", ""):gsub("%s+$", ""),
 			model = model:gsub("%s+$", ""),
 			-- /etc/openwrt_release 里是 DISTRIB_DESCRIPTION='PonWrt SNAPSHOT r0-xxx'
@@ -259,24 +316,76 @@ function collect()
 	end)
 	out.dns = dns
 
-	-- WAN 出口信息：出口 IP / 运营商 / 城市（api.ip.sb/geoip，10 分钟缓存）
+	-- WAN 出口信息（v21）：出口 IP / 运营商 / 城市。
+	-- 三级兜底：myip.ipip.net（纯文本，中文省市+运营商）→ ipinfo.io/json（英文）
+	--         → api.ip.sb/geoip。
+	-- 起因：2026-10-28 实测 api.ip.sb 连续返回 0 字节，卡片变成「未获取」——单一数据源
+	-- 一挂整块就空，所以改成链式兜底。
+	-- 缓存 /tmp/wan_geo.json：成功 600s；失败只等 60s 再试（写空文件刷新 mtime 即退避），
+	-- 避免断网时每 2 秒打一次外网。
 	pcall(function()
 		local fs = require "nixio.fs"
-		local fresh = false
 		local st = fs.stat("/tmp/wan_geo.json")
-		if st and (os.time() - st.mtime) < 600 then fresh = true end
-		local raw = ""
-		if fresh then
-			raw = luci.sys.exec("cat /tmp/wan_geo.json 2>/dev/null")
-		else
-			raw = luci.sys.exec("wget -q -O /tmp/wan_geo.json -T 6 'https://api.ip.sb/geoip' 2>/dev/null; cat /tmp/wan_geo.json 2>/dev/null")
+		local age = st and (os.time() - st.mtime) or 99999
+		local cached = nil
+		if st then
+			local g = jsonc.parse(fs.readfile("/tmp/wan_geo.json") or "")
+			if type(g) == "table" and g.ip then cached = g end
 		end
-		local g = jsonc.parse(raw)
-		if type(g) == "table" and g.ip then
-			out.wan = { ip = g.ip, isp = g.isp or g.organization or "", city = g.city or "", region = g.region or "" }
-		else
+		if cached and age < 600 then
+			out.wan = { ip = cached.ip, isp = cached.isp or "", city = cached.city or "",
+				region = cached.region or "" }
+			return
+		end
+		if not cached and age < 60 then
 			out.wan = { reachable = false }
+			return
 		end
+
+		local got = nil
+		-- 1) ipip.net：中文，形如「当前 IP：1.2.3.4  来自于：中国 浙江 杭州  移动」
+		-- 坑：Lua 的字符类按**字节**工作，把全角冒号写进 [：] 只会匹配其中一个字节，
+		-- 整个模式必然失配。所以这里一律"先抓 IPv4，再按空白切词，最后用明文 search 去标签"。
+		local txt = luci.sys.exec("wget -q -O- -T 6 'http://myip.ipip.net' 2>/dev/null")
+		local ip = txt:match("(%d+%.%d+%.%d+%.%d+)")
+		if ip then
+			local rest = txt:sub(select(2, txt:find(ip, 1, true)) + 1)
+			local toks = {}
+			for s in rest:gmatch("%S+") do toks[#toks + 1] = s end
+			-- 首词是「来自于：中国」，把标签连同冒号（半角/全角）切掉
+			if toks[1] then
+				local a, b = toks[1]:find("：", 1, true), toks[1]:find(":", 1, true)
+				if a and (not b or a < b) then toks[1] = toks[1]:sub(a + 3)
+				elseif b then toks[1] = toks[1]:sub(b + 1) end
+			end
+			local n = #toks
+			if n >= 2 then
+				got = { ip = ip, isp = toks[n], city = toks[n - 1],
+					region = n >= 3 and toks[n - 2] or "" }
+			end
+		end
+		-- 2) ipinfo.io（JSON，字段：ip / org / city / region）
+		if not got then
+			local g = jsonc.parse(luci.sys.exec("wget -q -O- -T 6 'https://ipinfo.io/json' 2>/dev/null"))
+			if type(g) == "table" and g.ip then
+				got = { ip = g.ip, isp = g.org or "", city = g.city or "", region = g.region or "" }
+			end
+		end
+		-- 3) api.ip.sb（原主源，保留作最后兜底）
+		if not got then
+			local g = jsonc.parse(luci.sys.exec("wget -q -O- -T 6 'https://api.ip.sb/geoip' 2>/dev/null"))
+			if type(g) == "table" and g.ip then
+				got = { ip = g.ip, isp = g.isp or g.organization or "", city = g.city or "",
+					region = g.region or "" }
+			end
+		end
+
+		local w = io.open("/tmp/wan_geo.json", "w")
+		if w then
+			if got then w:write(jsonc.stringify(got)) end   -- 失败写空文件，只为刷新 mtime
+			w:close()
+		end
+		out.wan = got or { reachable = false }
 	end)
 	if not out.wan then out.wan = { reachable = false } end
 
@@ -299,6 +408,8 @@ function collect()
 		out.net = { rx = sb.rx or 0, tx = sb.tx or 0 }                -- br-lan 累计字节
 		-- v20：前面板 lan1..lan4 的累计字节/协商速率/链路状态（速率由前端按差值算）
 		if sb.ports and #sb.ports > 0 then out.ports = sb.ports end
+		-- v21：IPv6（全局地址 / 默认网关 / eth0 链路本地），三个都缺就整块省略
+		if sb.v6 and (sb.v6.addr or sb.v6.gw or sb.v6.ll) then out.ipv6 = sb.v6 end
 		if sb.model and sb.model ~= "" then out.model = sb.model end
 		if sb.firmware and sb.firmware ~= "" then out.firmware = sb.firmware end
 	end
