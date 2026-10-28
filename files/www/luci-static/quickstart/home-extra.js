@@ -1,8 +1,8 @@
 /* home-extra.js — quickstart 首页增强 V2（2026-10-27, v9）
  * 1) 第一排卡片行整行隐藏（网络向导/NPU 卡不放首页，NPU 信息在状态页）
  * 2) 剔除：官网外链 / 测速 / 商店卡 / NAS 面板 / 网络接口状态
- * 3) 网络流量面板压缩（echart 钳制 180px）
- * 4) 设备流量占比饼图：legend 显示 类型图标 + 品牌 + 主机名
+ * 3) 网络流量面板：v11 起恢复原生高度（移除 canvas 钳制，仅保留标题间距微调）
+ * 4) 设备流量占比饼图：legend 显示 类型图标 + 品牌 + 主机名；活跃设备 <=1 时退化为单行文本
  * 5) 网络连接和IP地址卡片：注入 运营商 / 出口 IP 行（数据 home_extra/status，ip.sb geoip 10min 缓存）
  * 注入通道：main.htm <script src="/luci-static/quickstart/home-extra.js?v=N">
  */
@@ -11,7 +11,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v10';
+	var VER = 'v11';
 
 	function el(tag, cls, text) {
 		var e = document.createElement(tag);
@@ -34,7 +34,7 @@
 			+ '/* 剔除项 */'
 			+ 'a[href*="istoreos.com"]{display:none !important;}'
 			+ '.card-container{display:none !important;}'
-			+ '/* 网络流量面板压缩 */'
+			+ '/* 网络流量面板：仅微调标题间距，不再压缩图表高度（v11）*/'
 			+ '.he-flow-clamp .title_box{margin-bottom:6px !important;}'
 			+ '/* 饼图面板 */'
 			+ '.he-pie-panel{background:#fff;border-radius:12px;padding:16px 20px;box-sizing:border-box;}'
@@ -47,6 +47,11 @@
 			+ '.he-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;}'
 			+ '.he-host{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px;display:inline-block;vertical-align:middle;}'
 			+ '.he-vendor{color:#8aa0aa;font-size:12px;margin-right:6px;}'
+			+ '/* 饼图单设备/空态：压缩内边距，卡片高度收敛到 100px 以内 */'
+			+ '.he-pie-single{padding:10px 16px !important;}'
+			+ '.he-pie-single .he-pie-title{margin-bottom:6px !important;}'
+			+ '.he-pie-line{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}'
+			+ '.he-pie-empty{color:#8aa0aa !important;}'
 			+ '/* IP 卡注入行 */'
 			+ '.he-wan-row{color:inherit;}';
 		document.head.appendChild(s);
@@ -93,16 +98,24 @@
 	/* ---------- 剔除面板 ---------- */
 	var HIDE_PANELS = ['磁盘信息', '存储服务', 'Docker', '下载服务', '远程域名', '网络接口状态'];
 	function hidePanels() {
-		HIDE_PANELS.forEach(function (t) {
-			[...document.querySelectorAll('*')].some(function (e) {
-				if (e.children.length !== 0 || e.textContent.trim() !== t) return false;
-				var card = e.closest('.reusable-card, .network_container, .card, section');
-				if (card && !card.classList.contains('he-pie-panel')) {
-					card.style.display = 'none';
-					card.dataset.heHidden = '1';
-				}
-				return true;
-			});
+		/* 单次全文遍历匹配全部待隐藏标题（v11 性能优化）。等价性：
+		 * 旧实现按标题逐个遍历文档，每个标题取"文档序第一个叶子文本匹配项"，
+		 * 命中即停止该标题的搜索（即使 closest 取不到卡片也算已命中）。
+		 * 这里用 pending 集合在单次遍历中按文档序消费各标题的第一个匹配项，
+		 * 命中后同样立即从 pending 移除，故最终隐藏的面板集合与旧实现一致。 */
+		var pending = HIDE_PANELS.slice();
+		[...document.querySelectorAll('*')].some(function (e) {
+			if (pending.length === 0) return true;
+			if (e.children.length !== 0) return false;
+			var idx = pending.indexOf(e.textContent.trim());
+			if (idx === -1) return false;
+			pending.splice(idx, 1);
+			var card = e.closest('.reusable-card, .network_container, .card, section');
+			if (card && !card.classList.contains('he-pie-panel')) {
+				card.style.display = 'none';
+				card.dataset.heHidden = '1';
+			}
+			return pending.length === 0;
 		});
 		document.querySelectorAll('.grid-container').forEach(function (g) {
 			var items = [...g.children];
@@ -114,18 +127,13 @@
 		});
 	}
 
-	/* ---------- 网络流量面板压缩 + echarts runaway 钳制 ---------- */
+	/* ---------- 网络流量面板：标题间距微调 ----------
+	 * v11：删除 canvas 位图钳制。原先直接改 cv.height = 180 会让 echarts 内部坐标系
+	 * （实测 749x342）与位图高度不一致，折线被压成多个漂浮尖峰。
+	 * 图表高度必须交给 echarts 原生控制；.echart 是 flex:1，CSS 也控不住。
+	 * 本函数只负责打 he-flow-clamp 标记，供 .title_box 间距微调使用。
+	 */
 	function clampFlowChart() {
-		document.querySelectorAll('.echart canvas').forEach(function (cv) {
-			var styleH = parseFloat(cv.style.height) || 0;
-			if (cv.height > 180 || styleH > 180) {
-				var box = cv.parentElement;
-				cv.style.height = '180px';
-				cv.height = 180;
-				if (box) box.style.height = '180px';
-				window.dispatchEvent(new Event('resize'));
-			}
-		});
 		var flow = null;
 		document.querySelectorAll('.network_container').forEach(function (p) {
 			if (!flow && /网络流量/.test(p.textContent)) flow = p;
@@ -159,18 +167,57 @@
 		var legend = el('div', 'he-pie-legend', '采集设备速率中…');
 		wrap.appendChild(canvas); wrap.appendChild(legend);
 		panel.appendChild(wrap);
-		pieState.canvas = canvas; pieState.legend = legend;
-		/* 插到整个左右两栏行之后（不干扰 网络流量 echarts 盒子链） */
+		/* 插到整个左右两栏行之后（不干扰 网络流量 echarts 盒子链）。
+		 * 父链任一层取不到就静默放弃，并清掉半成品引用，避免后续在游离节点上绘制。 */
 		var host = ref.closest('.left-box') || ref.parentElement;
-		var row = host.parentElement;
-		row.parentElement.insertBefore(panel, row.nextSibling);
+		var row = host ? host.parentElement : null;
+		var cont = row ? row.parentElement : null;
+		if (!cont) return;
+		pieState.canvas = canvas; pieState.legend = legend;
+		cont.insertBefore(panel, row.nextSibling);
 		refreshPie();
+	}
+
+	/* 单设备态压缩内边距（卡片高度 <= 100px），多设备态还原 */
+	function markPieSingle(on) {
+		var panel = document.querySelector('.he-pie-panel');
+		if (!panel) return;
+		if (on) {
+			if (!panel.classList.contains('he-pie-single')) panel.classList.add('he-pie-single');
+		} else if (panel.classList.contains('he-pie-single')) {
+			panel.classList.remove('he-pie-single');
+		}
+	}
+
+	/* 单设备/空态渲染：隐藏 canvas（无饼图可画），legend 显示一行摘要。
+	 * 与 drawPie 成对：drawPie 入口恢复 canvas 显示，本函数隐藏 canvas。 */
+	function drawSingle(items) {
+		var canvas = pieState.canvas, legend = pieState.legend;
+		if (!canvas || !legend) return;
+		canvas.style.display = 'none';
+		legend.innerHTML = '';
+		if (!items.length) {
+			legend.appendChild(el('div', 'he-row he-pie-empty', '当前无设备流量'));
+			return;
+		}
+		var it = items[0];
+		var parts = [it.speedStr];
+		if (it.vendor) parts.push(it.vendor);
+		if (it.name) parts.push(it.name);
+		var row = el('div', 'he-row');
+		var left = el('span', 'he-pie-line');
+		left.appendChild(el('span', null, it.icon + ' '));
+		left.appendChild(el('span', null, parts.join(' · ')));
+		row.appendChild(left);
+		legend.appendChild(row);
 	}
 
 	function drawPie(items) {
 		var canvas = pieState.canvas, legend = pieState.legend;
 		if (!canvas || !legend) return;
-		var ctx = canvas.getContext('2d');
+		var ctx = canvas.getContext ? canvas.getContext('2d') : null;
+		if (!ctx) return;
+		canvas.style.display = ''; /* 与 drawSingle 的隐藏成对切换 */
 		var total = 0;
 		items.forEach(function (i) { total += i.rate; });
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -228,6 +275,16 @@
 				};
 			}).filter(function (i) { return i.rate > 0; })
 			  .sort(function (a, b) { return b.rate - a.rate; });
+			/* 活跃设备 <= 1（含 0）时饼图无意义：退化为单行文本。
+			 * 判据必须是"有速率的设备数"：listDevices 恒返回 5 台（含上游主路由与
+			 * 跨网段旧租约），用 devices.length 会让分支永不命中；也不能用 === 1，
+			 * 因为速率会瞬时归零，会在单设备态与空态之间抖动。 */
+			if (items.length <= 1) {
+				markPieSingle(true);
+				drawSingle(items);
+				return;
+			}
+			markPieSingle(false);
 			var top = items.slice(0, 5);
 			var rest = 0;
 			items.slice(5).forEach(function (i) { rest += i.rate; });
