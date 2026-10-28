@@ -1,0 +1,768 @@
+{
+ "open": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": null
+ },
+ "rate_off": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": false
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "none",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[\"rate\"]"
+ },
+ "rate_on": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[]"
+ },
+ "kpi_off": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": false
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 706,
+  "vis": {
+   "kpi": "none",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[\"kpi\"]"
+ },
+ "kpi_on": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[]"
+ },
+ "quick_off": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": false
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 683,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "none",
+   "foot": "flex"
+  },
+  "stored": "[\"quick\"]"
+ },
+ "after_reload": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": false
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 683,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "none",
+   "foot": "flex"
+  },
+  "stored": "[\"quick\"]"
+ },
+ "reset": {
+  "panelOpen": true,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 1440,
+   "h": 900
+  },
+  "cardRect": {
+   "x": 510,
+   "y": 222,
+   "w": 420,
+   "h": 456
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[]"
+ },
+ "closed_x": {
+  "panelOpen": false,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "cardRect": {
+   "x": 0,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[]"
+ },
+ "closed_mask": {
+  "panelOpen": false,
+  "panelRect": {
+   "x": 0,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "cardRect": {
+   "x": 0,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "nativeModal": false,
+  "rows": [
+   {
+    "nm": "指标行",
+    "sw": true,
+    "mod": "kpi",
+    "on": true
+   },
+   {
+    "nm": "PON 光链路",
+    "sw": true,
+    "mod": "pon",
+    "on": true
+   },
+   {
+    "nm": "网口状态",
+    "sw": true,
+    "mod": "ports",
+    "on": true
+   },
+   {
+    "nm": "WAN 出口",
+    "sw": true,
+    "mod": "wan",
+    "on": true
+   },
+   {
+    "nm": "实时速率",
+    "sw": true,
+    "mod": "rate",
+    "on": true
+   },
+   {
+    "nm": "快捷入口",
+    "sw": true,
+    "mod": "quick",
+    "on": true
+   },
+   {
+    "nm": "底部信息",
+    "sw": false,
+    "mod": null,
+    "on": null
+   }
+  ],
+  "rootH": 806,
+  "vis": {
+   "kpi": "grid",
+   "wan": "block",
+   "rate": "block",
+   "quick": "block",
+   "foot": "flex"
+  },
+  "stored": "[]"
+ },
+ "errors": [],
+ "checks": [
+  {
+   "name": "齿轮打开自绘面板",
+   "ok": true
+  },
+  {
+   "name": "面板铺满视口",
+   "ok": true
+  },
+  {
+   "name": "标题行 7 行（6 开关 + 常显）",
+   "ok": true
+  },
+  {
+   "name": "项目名称与骨架一致",
+   "ok": true
+  },
+  {
+   "name": "初始 6 个开关全开",
+   "ok": true
+  },
+  {
+   "name": "关实时速率 → 节点消失",
+   "ok": true
+  },
+  {
+   "name": "关实时速率 → 同排 WAN 不塌陷",
+   "ok": true
+  },
+  {
+   "name": "关指标行 → 骨架变矮",
+   "ok": true
+  },
+  {
+   "name": "关快捷入口 → 骨架变矮",
+   "ok": true
+  },
+  {
+   "name": "再开实时速率 → 节点回来",
+   "ok": true
+  },
+  {
+   "name": "关指标行 → 节点消失",
+   "ok": true
+  },
+  {
+   "name": "再开指标行 → 节点回来",
+   "ok": true
+  },
+  {
+   "name": "关快捷入口 → 节点消失且已落盘",
+   "ok": true
+  },
+  {
+   "name": "刷新后仍关闭",
+   "ok": true
+  },
+  {
+   "name": "全部显示后恢复",
+   "ok": true
+  },
+  {
+   "name": "× 可关",
+   "ok": true
+  },
+  {
+   "name": "蒙层可关",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

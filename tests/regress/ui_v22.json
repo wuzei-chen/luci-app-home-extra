@@ -1,0 +1,237 @@
+{
+ "api": {
+  "ipv6": {
+   "ll": "fe80::523d:7fff:fe7c:9910"
+  },
+  "wan": {
+   "region": "浙江",
+   "city": "杭州",
+   "isp": "移动",
+   "ip": "183.247.21.195"
+  }
+ },
+ "shown": {
+  "ip": {
+   "t": "183.247.21.195",
+   "cls": "he13-vl",
+   "title": null
+  },
+  "eye": {
+   "t": "隐藏",
+   "cls": "he13-eye",
+   "title": "隐藏出口 IP"
+  },
+  "v6": {
+   "t": "未获取",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "上游未下发全局 IPv6 地址（无 RA/PD）"
+  },
+  "v6ll": {
+   "t": "fe80::523d:7fff:fe7c:9910",
+   "cls": "he13-vl he13-mono",
+   "title": "eth0 链路本地地址"
+  },
+  "rootH": 806,
+  "overflow": 0,
+  "gap": 8,
+  "ls": null,
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "hidden": {
+  "ip": {
+   "t": "已隐藏",
+   "cls": "he13-vl is-off",
+   "title": "点击右侧「显示」恢复"
+  },
+  "eye": {
+   "t": "显示",
+   "cls": "he13-eye",
+   "title": "显示出口 IP"
+  },
+  "v6": {
+   "t": "未获取",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "上游未下发全局 IPv6 地址（无 RA/PD）"
+  },
+  "v6ll": {
+   "t": "fe80::523d:7fff:fe7c:9910",
+   "cls": "he13-vl he13-mono",
+   "title": "eth0 链路本地地址"
+  },
+  "rootH": 806,
+  "overflow": 0,
+  "gap": 8,
+  "ls": "1",
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "reload": {
+  "ip": {
+   "t": "已隐藏",
+   "cls": "he13-vl is-off",
+   "title": "点击右侧「显示」恢复"
+  },
+  "eye": {
+   "t": "显示",
+   "cls": "he13-eye",
+   "title": "显示出口 IP"
+  },
+  "v6": {
+   "t": "未获取",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "上游未下发全局 IPv6 地址（无 RA/PD）"
+  },
+  "v6ll": {
+   "t": "fe80::523d:7fff:fe7c:9910",
+   "cls": "he13-vl he13-mono",
+   "title": "eth0 链路本地地址"
+  },
+  "rootH": 806,
+  "overflow": 0,
+  "gap": 8,
+  "ls": "1",
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "wizard": {
+  "ip": null,
+  "eye": null,
+  "v6": null,
+  "v6ll": null,
+  "rootH": null,
+  "overflow": 124,
+  "gap": null,
+  "ls": "1",
+  "path": "/cgi-bin/luci/admin/network_guide/pages/network",
+  "mcW": 1232
+ },
+ "back": {
+  "ip": {
+   "t": "已隐藏",
+   "cls": "he13-vl is-off",
+   "title": "点击右侧「显示」恢复"
+  },
+  "eye": {
+   "t": "显示",
+   "cls": "he13-eye",
+   "title": "显示出口 IP"
+  },
+  "v6": {
+   "t": "未获取",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "上游未下发全局 IPv6 地址（无 RA/PD）"
+  },
+  "v6ll": {
+   "t": "fe80::523d:7fff:fe7c:9910",
+   "cls": "he13-vl he13-mono",
+   "title": "eth0 链路本地地址"
+  },
+  "rootH": 806,
+  "overflow": 0,
+  "gap": 8,
+  "ls": "1",
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "reshown": {
+  "ip": {
+   "t": "183.247.21.195",
+   "cls": "he13-vl",
+   "title": null
+  },
+  "eye": {
+   "t": "隐藏",
+   "cls": "he13-eye",
+   "title": "隐藏出口 IP"
+  },
+  "v6": {
+   "t": "未获取",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "上游未下发全局 IPv6 地址（无 RA/PD）"
+  },
+  "v6ll": {
+   "t": "fe80::523d:7fff:fe7c:9910",
+   "cls": "he13-vl he13-mono",
+   "title": "eth0 链路本地地址"
+  },
+  "rootH": 806,
+  "overflow": 0,
+  "gap": 8,
+  "ls": "0",
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "errors": [],
+ "checks": [
+  {
+   "name": "按钮存在且初始为「隐藏」",
+   "ok": true
+  },
+  {
+   "name": "初始显示真实出口 IP",
+   "ok": true
+  },
+  {
+   "name": "初始不置灰",
+   "ok": true
+  },
+  {
+   "name": "点击后 IP 变「已隐藏」",
+   "ok": true
+  },
+  {
+   "name": "已隐藏态置灰",
+   "ok": true
+  },
+  {
+   "name": "点击后按钮变「显示」",
+   "ok": true
+  },
+  {
+   "name": "写入 localStorage",
+   "ok": true
+  },
+  {
+   "name": "刷新后仍隐藏",
+   "ok": true
+  },
+  {
+   "name": "SPA 往返后仍隐藏",
+   "ok": true
+  },
+  {
+   "name": "隐藏态不把「没有」说成「隐藏」（IPv6 仍是未获取）",
+   "ok": true
+  },
+  {
+   "name": "链路本地 fe80 不受影响",
+   "ok": true
+  },
+  {
+   "name": "点回「显示」恢复真实 IP",
+   "ok": true
+  },
+  {
+   "name": "恢复后按钮回到「隐藏」",
+   "ok": true
+  },
+  {
+   "name": "恢复后清掉持久化标记",
+   "ok": true
+  },
+  {
+   "name": "IP 与按钮贴合（间距 <= 12px）",
+   "ok": true
+  },
+  {
+   "name": "首屏不溢出",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

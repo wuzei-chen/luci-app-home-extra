@@ -1,0 +1,54 @@
+{
+ "verdict": "ALL GREEN",
+ "rows": [
+  {
+   "suite": "ui_v16",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 12",
+   "seconds": 38.9
+  },
+  {
+   "suite": "ui_v17",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 13",
+   "seconds": 29.3
+  },
+  {
+   "suite": "ui_v18",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 18",
+   "seconds": 26.6
+  },
+  {
+   "suite": "ui_v19",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 17",
+   "seconds": 18.5
+  },
+  {
+   "suite": "ui_v20",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 13",
+   "seconds": 19.5
+  },
+  {
+   "suite": "ui_v21",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 11",
+   "seconds": 17.2
+  },
+  {
+   "suite": "ui_v22",
+   "rc": 0,
+   "ok": true,
+   "summary": "全部通过 / 17",
+   "seconds": 39.3
+  }
+ ]
+}

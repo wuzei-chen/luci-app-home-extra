@@ -1,0 +1,238 @@
+{
+ "home": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 208,
+   "y": 220,
+   "w": 1232,
+   "h": 96
+  },
+  "cardDisp": "block",
+  "cells": [
+   {
+    "k": "LAN1",
+    "v": "未连接",
+    "off": true
+   },
+   {
+    "k": "LAN2",
+    "v": "未连接",
+    "off": true
+   },
+   {
+    "k": "LAN3 · 1G",
+    "v": "收 2.9 KB/s  发 5.2 KB/s",
+    "off": false
+   },
+   {
+    "k": "LAN4",
+    "v": "未连接",
+    "off": true
+   }
+  ],
+  "sum": "在线 1 / 4",
+  "rootH": 806,
+  "scrollH": 900,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "api": [
+  {
+   "tx": 0,
+   "name": "lan1",
+   "up": false,
+   "speed": -1,
+   "rx": 0
+  },
+  {
+   "tx": 0,
+   "name": "lan2",
+   "up": false,
+   "speed": -1,
+   "rx": 0
+  },
+  {
+   "tx": 1028816248,
+   "name": "lan3",
+   "up": true,
+   "speed": 1000,
+   "rx": 785464348
+  },
+  {
+   "tx": 0,
+   "name": "lan4",
+   "up": false,
+   "speed": -1,
+   "rx": 0
+  }
+ ],
+ "panel": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 208,
+   "y": 220,
+   "w": 1232,
+   "h": 96
+  },
+  "cardDisp": "block",
+  "cells": [
+   {
+    "k": "LAN1",
+    "v": "未连接",
+    "off": true
+   },
+   {
+    "k": "LAN2",
+    "v": "未连接",
+    "off": true
+   },
+   {
+    "k": "LAN3 · 1G",
+    "v": "收 3.2 KB/s  发 5.8 KB/s",
+    "off": false
+   },
+   {
+    "k": "LAN4",
+    "v": "未连接",
+    "off": true
+   }
+  ],
+  "sum": "在线 1 / 4",
+  "rootH": 806,
+  "scrollH": 900,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "ports_off": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 0,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "cardDisp": "none",
+  "cells": [
+   {
+    "k": "LAN1",
+    "v": "未连接",
+    "off": true
+   },
+   {
+    "k": "LAN2",
+    "v": "未连接",
+    "off": true
+   },
+   {
+    "k": "LAN3 · 1G",
+    "v": "收 3.2 KB/s  发 5.8 KB/s",
+    "off": false
+   },
+   {
+    "k": "LAN4",
+    "v": "未连接",
+    "off": true
+   }
+  ],
+  "sum": "在线 1 / 4",
+  "rootH": 698,
+  "scrollH": 900,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "wizard": {
+  "hasCard": false,
+  "cardRect": null,
+  "cardDisp": null,
+  "cells": [],
+  "sum": null,
+  "rootH": null,
+  "scrollH": 900,
+  "panelRows": [],
+  "path": "/cgi-bin/luci/admin/network_guide/pages/network",
+  "mcW": 1232
+ },
+ "errors": [],
+ "checks": [
+  {
+   "name": "网口卡存在且有高度",
+   "ok": true
+  },
+  {
+   "name": "4 个格且名字为 LAN1..LAN4",
+   "ok": true
+  },
+  {
+   "name": "在线/离线与后端一致",
+   "ok": true
+  },
+  {
+   "name": "在线口带协商速率",
+   "ok": true
+  },
+  {
+   "name": "离线口显示「未连接」且置灰",
+   "ok": true
+  },
+  {
+   "name": "在线口速率格式为「收 x  发 y」",
+   "ok": true
+  },
+  {
+   "name": "速率无 NaN/undefined",
+   "ok": true
+  },
+  {
+   "name": "汇总在线数正确",
+   "ok": true
+  },
+  {
+   "name": "面板 7 行且含网口状态",
+   "ok": true
+  },
+  {
+   "name": "关网口卡 → 隐藏且骨架变矮",
+   "ok": true
+  },
+  {
+   "name": "首屏仍在一屏内",
+   "ok": true
+  },
+  {
+   "name": "回归：SPA 到向导内容正常",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

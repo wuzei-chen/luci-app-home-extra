@@ -1,0 +1,245 @@
+{
+ "home": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 208,
+   "y": 112,
+   "w": 1232,
+   "h": 96
+  },
+  "cardDisp": "block",
+  "mode": "XGPON",
+  "state": "未接通光信号",
+  "dot": "he13-pon-dot is-bad",
+  "rx": "无光",
+  "tx": "无光",
+  "temp": "42.3 ℃",
+  "volt": "3.30 V",
+  "bias": "0.0 mA",
+  "onu": "O1 初始",
+  "rxOff": true,
+  "rootH": 806,
+  "scrollH": 900,
+  "mcW": 0,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 10.5 KB/s 上传速度 94.2 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时41分23秒 IPv4"
+ },
+ "api": {
+  "cal": "ready",
+  "phy": false,
+  "bias": 0,
+  "temp": 42.2695,
+  "syncs": "hunt",
+  "life": "wait-optical-signal",
+  "rx": -40,
+  "volt": 3.3013,
+  "tx": -40,
+  "mode": "xgpon",
+  "onu": "O1",
+  "signal": false
+ },
+ "panel": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 208,
+   "y": 112,
+   "w": 1232,
+   "h": 96
+  },
+  "cardDisp": "block",
+  "mode": "XGPON",
+  "state": "未接通光信号",
+  "dot": "he13-pon-dot is-bad",
+  "rx": "无光",
+  "tx": "无光",
+  "temp": "42.3 ℃",
+  "volt": "3.30 V",
+  "bias": "0.0 mA",
+  "onu": "O1 初始",
+  "rxOff": true,
+  "rootH": 806,
+  "scrollH": 900,
+  "mcW": 0,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 10.5 KB/s 上传速度 94.2 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时41分24秒 IPv4"
+ },
+ "pon_off": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 0,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "cardDisp": "none",
+  "mode": "XGPON",
+  "state": "未接通光信号",
+  "dot": "he13-pon-dot is-bad",
+  "rx": "无光",
+  "tx": "无光",
+  "temp": "42.3 ℃",
+  "volt": "3.30 V",
+  "bias": "0.0 mA",
+  "onu": "O1 初始",
+  "rxOff": true,
+  "rootH": 698,
+  "scrollH": 900,
+  "mcW": 0,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 10.5 KB/s 上传速度 94.2 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时41分26秒 IPv4"
+ },
+ "pon_on": {
+  "hasCard": true,
+  "cardRect": {
+   "x": 208,
+   "y": 112,
+   "w": 1232,
+   "h": 96
+  },
+  "cardDisp": "block",
+  "mode": "XGPON",
+  "state": "未接通光信号",
+  "dot": "he13-pon-dot is-bad",
+  "rx": "无光",
+  "tx": "无光",
+  "temp": "42.3 ℃",
+  "volt": "3.30 V",
+  "bias": "0.0 mA",
+  "onu": "O1 初始",
+  "rxOff": true,
+  "rootH": 806,
+  "scrollH": 900,
+  "mcW": 0,
+  "panelRows": [
+   "指标行",
+   "PON 光链路",
+   "网口状态",
+   "WAN 出口",
+   "实时速率",
+   "快捷入口",
+   "底部信息"
+  ],
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 10.5 KB/s 上传速度 94.2 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时41分27秒 IPv4"
+ },
+ "wizard": {
+  "hasCard": false,
+  "cardRect": null,
+  "cardDisp": null,
+  "mode": null,
+  "state": null,
+  "dot": "",
+  "rx": null,
+  "tx": null,
+  "temp": null,
+  "volt": null,
+  "bias": null,
+  "onu": null,
+  "rxOff": false,
+  "rootH": null,
+  "scrollH": 900,
+  "mcW": 1232,
+  "panelRows": [],
+  "path": "/cgi-bin/luci/admin/network_guide/pages/network",
+  "text": "欢迎使用网络配置向导 选择一种连接方式以开始 宽带拨号连接 连接现有路由器 配置为旁路由 PON 配置 没找到想要的配置？请使用高级模式 Powered by LuCI Maste"
+ },
+ "errors": [],
+ "checks": [
+  {
+   "name": "PON 卡存在且有高度",
+   "ok": true
+  },
+  {
+   "name": "面板多出 PON 行",
+   "ok": true
+  },
+  {
+   "name": "模式 = XGPON",
+   "ok": true
+  },
+  {
+   "name": "无光时状态 = 未接通光信号",
+   "ok": true
+  },
+  {
+   "name": "状态点 is-bad",
+   "ok": true
+  },
+  {
+   "name": "RX 显示「无光」而非 -40 dBm",
+   "ok": true
+  },
+  {
+   "name": "TX 显示「无光」",
+   "ok": true
+  },
+  {
+   "name": "模块温度有值",
+   "ok": true
+  },
+  {
+   "name": "电压有值",
+   "ok": true
+  },
+  {
+   "name": "偏置电流有值",
+   "ok": true
+  },
+  {
+   "name": "ONU = O1 初始",
+   "ok": true
+  },
+  {
+   "name": "前端数值与后端一致",
+   "ok": true
+  },
+  {
+   "name": "关 PON → 卡片隐藏且骨架变矮",
+   "ok": true
+  },
+  {
+   "name": "再开 PON → 卡片回来",
+   "ok": true
+  },
+  {
+   "name": "首屏仍在一屏内（scrollH ≤ 900）",
+   "ok": true
+  },
+  {
+   "name": "回归：SPA 到向导内容正常",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

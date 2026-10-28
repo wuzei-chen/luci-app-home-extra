@@ -1,0 +1,237 @@
+{
+ "A_plain_root": {
+  "url": "/cgi-bin/luci/admin/quickstart/",
+  "he13Flag": null,
+  "rootExists": true,
+  "rootRect": {
+   "t": 0,
+   "l": 208,
+   "w": 1232,
+   "h": 806
+  },
+  "rootVisible": true,
+  "kpiCount": 4,
+  "quickCount": 5,
+  "mf": "Nokia XG-040G-MD (UBI) · PonWrt SNAPSHOT r0-03c1345",
+  "fw": null,
+  "time": "2026-10-28 20:38:13",
+  "gear": "⚙ 模块设置",
+  "gearRect": {
+   "t": 772,
+   "l": 1283,
+   "w": 61,
+   "h": 34
+  },
+  "uptime": "2天 5小时",
+  "term": "ARP 可达 6",
+  "conn": "325",
+  "load": "CPU 33% · 温度 71℃ · 内存 63%",
+  "isp": "移动（杭州）",
+  "ip": "183.247.21.195",
+  "chartSum": "↓ 1.8 KB/s ↑ 4.1 KB/s",
+  "canvasRect": {
+   "t": 367,
+   "l": 846,
+   "w": 578,
+   "h": 150
+  },
+  "canvasBit": {
+   "w": 578,
+   "h": 150
+  },
+  "mcCollapsed": {
+   "disp": "block",
+   "w": 0,
+   "h": 0
+  },
+  "nativeVisible": {
+   "cardContainer": false,
+   "network": false,
+   "system": false
+  },
+  "scrollH": 900,
+  "htmlClass": "he13",
+  "tag": "A 裸路径 /"
+ },
+ "B_off": {
+  "url": "/cgi-bin/luci/admin/quickstart/?he13=0",
+  "he13Flag": "0",
+  "rootExists": false,
+  "rootRect": null,
+  "rootVisible": false,
+  "kpiCount": 0,
+  "quickCount": 0,
+  "mf": null,
+  "fw": null,
+  "time": null,
+  "gear": null,
+  "gearRect": null,
+  "uptime": null,
+  "term": null,
+  "conn": null,
+  "load": null,
+  "isp": null,
+  "ip": null,
+  "chartSum": null,
+  "canvasRect": null,
+  "canvasBit": null,
+  "mcCollapsed": {
+   "disp": "flex",
+   "w": 1232,
+   "h": 1311
+  },
+  "nativeVisible": {
+   "cardContainer": false,
+   "network": true,
+   "system": true
+  },
+  "scrollH": 900,
+  "htmlClass": "",
+  "tag": "B he13=0"
+ },
+ "D_sticky_off": {
+  "url": "/cgi-bin/luci/admin/quickstart/",
+  "he13Flag": "0",
+  "rootExists": false,
+  "rootRect": null,
+  "rootVisible": false,
+  "kpiCount": 0,
+  "quickCount": 0,
+  "mf": null,
+  "fw": null,
+  "time": null,
+  "gear": null,
+  "gearRect": null,
+  "uptime": null,
+  "term": null,
+  "conn": null,
+  "load": null,
+  "isp": null,
+  "ip": null,
+  "chartSum": null,
+  "canvasRect": null,
+  "canvasBit": null,
+  "mcCollapsed": {
+   "disp": "flex",
+   "w": 1232,
+   "h": 1311
+  },
+  "nativeVisible": {
+   "cardContainer": false,
+   "network": true,
+   "system": true
+  },
+  "scrollH": 900,
+  "htmlClass": "",
+  "tag": "D 关后裸路径"
+ },
+ "C_on": {
+  "url": "/cgi-bin/luci/admin/quickstart/?he13=1",
+  "he13Flag": "1",
+  "rootExists": true,
+  "rootRect": {
+   "t": 0,
+   "l": 208,
+   "w": 1232,
+   "h": 806
+  },
+  "rootVisible": true,
+  "kpiCount": 4,
+  "quickCount": 5,
+  "mf": "Nokia XG-040G-MD (UBI) · PonWrt SNAPSHOT r0-03c1345",
+  "fw": null,
+  "time": "2026-10-28 20:38:37",
+  "gear": "⚙ 模块设置",
+  "gearRect": {
+   "t": 772,
+   "l": 1283,
+   "w": 61,
+   "h": 34
+  },
+  "uptime": "2天 5小时",
+  "term": "ARP 可达 6",
+  "conn": "339",
+  "load": "CPU 19% · 温度 72℃ · 内存 63%",
+  "isp": "移动（杭州）",
+  "ip": "183.247.21.195",
+  "chartSum": "↓ 1.3 KB/s ↑ 2.6 KB/s",
+  "canvasRect": {
+   "t": 367,
+   "l": 846,
+   "w": 578,
+   "h": 150
+  },
+  "canvasBit": {
+   "w": 578,
+   "h": 150
+  },
+  "mcCollapsed": {
+   "disp": "block",
+   "w": 0,
+   "h": 0
+  },
+  "nativeVisible": {
+   "cardContainer": false,
+   "network": false,
+   "system": false
+  },
+  "scrollH": 900,
+  "htmlClass": "he13",
+  "tag": "C he13=1"
+ },
+ "errors": [],
+ "benign": [
+  "console:Failed to load resource: the server responded with a status of 403 (Forbidden)"
+ ],
+ "checks": [
+  {
+   "name": "A 裸路径渲染骨架",
+   "ok": true
+  },
+  {
+   "name": "A 原生三块全隐藏",
+   "ok": true
+  },
+  {
+   "name": "A #maincontent 已塌缩",
+   "ok": true
+  },
+  {
+   "name": "A KPI 四张、快捷五格",
+   "ok": true
+  },
+  {
+   "name": "A 型号·固件合并为一个字段",
+   "ok": true
+  },
+  {
+   "name": "A 齿轮在",
+   "ok": true
+  },
+  {
+   "name": "A 面积图有尺寸",
+   "ok": true
+  },
+  {
+   "name": "B ?he13=0 退回原生",
+   "ok": true
+  },
+  {
+   "name": "B 原生回来了",
+   "ok": true
+  },
+  {
+   "name": "D 关掉后裸路径仍关",
+   "ok": true
+  },
+  {
+   "name": "C ?he13=1 恢复骨架",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror / 非预期 console error",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

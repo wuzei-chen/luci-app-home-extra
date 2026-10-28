@@ -1,0 +1,151 @@
+{
+ "home": {
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "htmlClass": "he13",
+  "he13Root": true,
+  "mc": {
+   "x": 208,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "mcCollapsed": "1",
+  "hiddenLeft": 2,
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 8.0 KB/s 上传速度 73.3 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时40分26秒 IPv4 （lan） 静态网络 已启用 ***************",
+  "scrollH": 900
+ },
+ "wizard": {
+  "path": "/cgi-bin/luci/admin/network_guide/pages/network",
+  "htmlClass": "",
+  "he13Root": false,
+  "mc": {
+   "x": 208,
+   "y": 60,
+   "w": 1232,
+   "h": 964
+  },
+  "mcCollapsed": null,
+  "hiddenLeft": 0,
+  "text": "欢迎使用网络配置向导 选择一种连接方式以开始 宽带拨号连接 连接现有路由器 配置为旁路由 PON 配置 没找到想要的配置？请使用高级模式 Powered by LuCI Master (26.295.29531~05c955f) | Arg",
+  "scrollH": 900,
+  "clickedMenu": true
+ },
+ "back_home": {
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "htmlClass": "he13",
+  "he13Root": true,
+  "mc": {
+   "x": 208,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "mcCollapsed": "1",
+  "hiddenLeft": 2,
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 2.6 KB/s 上传速度 4.6 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时40分31秒 IPv4 （lan） 静态网络 已启用 ****************",
+  "scrollH": 900,
+  "clickedMenu": true
+ },
+ "back_home2": {
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "htmlClass": "he13",
+  "he13Root": true,
+  "mc": {
+   "x": 208,
+   "y": 0,
+   "w": 0,
+   "h": 0
+  },
+  "mcCollapsed": "1",
+  "hiddenLeft": 2,
+  "text": "iStoreOS官网 网络流量 下载 上传 下载速度 2.6 KB/s 上传速度 4.6 KB/s 网络连接和IP地址 设备管理 网络连接正常 2天5小时40分33秒 IPv4 （lan） 静态网络 已启用 ****************",
+  "scrollH": 900
+ },
+ "status": {
+  "path": "/cgi-bin/luci/admin/status/overview",
+  "htmlClass": "",
+  "he13Root": false,
+  "mc": {
+   "x": 208,
+   "y": 60,
+   "w": 1232,
+   "h": 2726
+  },
+  "mcCollapsed": null,
+  "hiddenLeft": 0,
+  "text": "状态 系统 隐藏 主机名 XG-040G-MD 型号 Nokia XG-040G-MD (UBI) 架构 ARMv8 Processor rev 4 (v8l) x 4 (750MHz, 72.3°C) 目标平台 airoha/an7581",
+  "scrollH": 900,
+  "clickedMenu": true
+ },
+ "wizard_direct": {
+  "path": "/cgi-bin/luci/admin/network_guide/pages/network",
+  "htmlClass": "",
+  "he13Root": false,
+  "mc": {
+   "x": 208,
+   "y": 60,
+   "w": 1232,
+   "h": 964
+  },
+  "mcCollapsed": null,
+  "hiddenLeft": 0,
+  "text": "欢迎使用网络配置向导 选择一种连接方式以开始 宽带拨号连接 连接现有路由器 配置为旁路由 PON 配置 没找到想要的配置？请使用高级模式 Powered by LuCI Master (26.295.29531~05c955f) | Arg",
+  "scrollH": 900
+ },
+ "errors": [],
+ "checks": [
+  {
+   "name": "首页有骨架",
+   "ok": true
+  },
+  {
+   "name": "首页已塌缩",
+   "ok": true
+  },
+  {
+   "name": "SPA 到向导：he13 类已撤",
+   "ok": true
+  },
+  {
+   "name": "SPA 到向导：骨架已移除",
+   "ok": true
+  },
+  {
+   "name": "SPA 到向导：塌缩已撤销",
+   "ok": true
+  },
+  {
+   "name": "SPA 到向导：无残留隐藏标记",
+   "ok": true
+  },
+  {
+   "name": "SPA 到向导：向导内容可见",
+   "ok": true
+  },
+  {
+   "name": "SPA 回首页：骨架重建",
+   "ok": true
+  },
+  {
+   "name": "SPA 回首页：再次塌缩",
+   "ok": true
+  },
+  {
+   "name": "SPA 到概览：现场撤干净",
+   "ok": true
+  },
+  {
+   "name": "SPA 到概览：有内容",
+   "ok": true
+  },
+  {
+   "name": "整页直开向导：正常",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

@@ -1,0 +1,104 @@
+{
+ "home": {
+  "v6": {
+   "t": "未获取",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "上游未下发全局 IPv6 地址（无 RA/PD）"
+  },
+  "v6gw": {
+   "t": "无",
+   "cls": "he13-vl he13-mono is-off",
+   "title": "没有 IPv6 默认路由"
+  },
+  "v6ll": {
+   "t": "fe80::523d:7fff:fe7c:9910",
+   "cls": "he13-vl he13-mono",
+   "title": "eth0 链路本地地址"
+  },
+  "isp": "移动（杭州）",
+  "ip": "183.247.21.195",
+  "wanCard": {
+   "x": 208,
+   "y": 328,
+   "w": 610,
+   "h": 309
+  },
+  "rootH": 806,
+  "scrollH": 900,
+  "overflow": 0,
+  "path": "/cgi-bin/luci/admin/quickstart/",
+  "mcW": 0
+ },
+ "api": {
+  "ipv6": {
+   "ll": "fe80::523d:7fff:fe7c:9910"
+  },
+  "wan": {
+   "region": "浙江",
+   "city": "杭州",
+   "isp": "移动",
+   "ip": "183.247.21.195"
+  }
+ },
+ "wizard": {
+  "v6": null,
+  "v6gw": null,
+  "v6ll": null,
+  "isp": null,
+  "ip": null,
+  "wanCard": null,
+  "rootH": null,
+  "scrollH": 900,
+  "overflow": 124,
+  "path": "/cgi-bin/luci/admin/network_guide/pages/network",
+  "mcW": 1232
+ },
+ "errors": [],
+ "checks": [
+  {
+   "name": "三行都在",
+   "ok": true
+  },
+  {
+   "name": "IPv6 地址 = 未获取且置灰",
+   "ok": true
+  },
+  {
+   "name": "缺失时 title 说明原因",
+   "ok": true
+  },
+  {
+   "name": "IPv6 网关 = 无且置灰",
+   "ok": true
+  },
+  {
+   "name": "IPv6 本地 = 后端链路本地地址",
+   "ok": true
+  },
+  {
+   "name": "IPv6 本地不置灰",
+   "ok": true
+  },
+  {
+   "name": "后端确实没有全局地址",
+   "ok": true
+  },
+  {
+   "name": "运营商恢复中文（兜底生效）",
+   "ok": true
+  },
+  {
+   "name": "卡片变高但首屏不溢出",
+   "ok": true
+  },
+  {
+   "name": "回归：SPA 到向导内容正常",
+   "ok": true
+  },
+  {
+   "name": "无 pageerror",
+   "ok": true
+  }
+ ],
+ "fail": 0
+}

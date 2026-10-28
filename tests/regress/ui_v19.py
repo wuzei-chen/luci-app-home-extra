@@ -95,7 +95,8 @@ def main():
     h, api, pa = res["home"], res["api"] or {}, res["panel"]
     checks = [
         ("PON 卡存在且有高度", h["hasCard"] and (h["cardRect"] or {}).get("h", 0) > 80),
-        ("面板多出 PON 行", "PON 光链路" in pa["panelRows"] and len(pa["panelRows"]) == 6),
+        # v20 起模块设置面板扩为 7 行（新增网口状态）
+        ("面板多出 PON 行", "PON 光链路" in pa["panelRows"] and len(pa["panelRows"]) == 7),
         ("模式 = XGPON", h["mode"] == "XGPON"),
         ("无光时状态 = 未接通光信号", h["state"] == "未接通光信号"),
         ("状态点 is-bad", "is-bad" in (h["dot"] or "")),

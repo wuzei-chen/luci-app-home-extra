@@ -124,10 +124,11 @@ def main():
     checks = [
         ("齿轮打开自绘面板", o["panelOpen"] and not o["nativeModal"]),
         ("面板铺满视口", (o["panelRect"] or {}).get("w") == 1440 and (o["panelRect"] or {}).get("h") == 900),
-        ("标题行 5 行（4 开关 + 常显）", len(o["rows"]) == 5 and sum(1 for r in o["rows"] if r["sw"]) == 4),
+        # v20 起模块面板扩为 7 行（6 开关 + 底部信息常显），新增 PON 光链路/网口状态
+        ("标题行 7 行（6 开关 + 常显）", len(o["rows"]) == 7 and sum(1 for r in o["rows"] if r["sw"]) == 6),
         ("项目名称与骨架一致",
-         mnames[:4] == ["指标行", "WAN 出口", "实时速率", "快捷入口"] and mnames[4] == "底部信息"),
-        ("初始 4 个开关全开", all(r["on"] for r in o["rows"] if r["sw"])),
+         mnames == ["指标行", "PON 光链路", "网口状态", "WAN 出口", "实时速率", "快捷入口", "底部信息"]),
+        ("初始 6 个开关全开", all(r["on"] for r in o["rows"] if r["sw"])),
         ("关实时速率 → 节点消失", ro["vis"]["rate"] == "none"),
         # 速率卡与 WAN 卡同一排，行高由更高的 WAN 卡决定，所以单独关速率高度不变
         # 是**正确**的（不是残留）；真正的"变矮"要看整行模块。
