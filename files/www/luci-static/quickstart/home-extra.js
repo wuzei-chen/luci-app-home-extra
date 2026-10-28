@@ -3,7 +3,7 @@
  * 2) 剔除：官网外链 / 测速 / 商店卡 / NAS 面板 / 网络接口状态
  * 3) 网络流量面板：v11 起恢复原生高度（移除 canvas 钳制，仅保留标题间距微调）
  * 4) 设备流量占比饼图：legend 显示 类型图标 + 品牌 + 主机名；活跃设备 <=1 时退化为单行文本
- *    （v11.1：1KB/s 噪声地板 + 2 次轮询迟滞，抑制单设备态/饼图态来回抖动）
+ *    （v12：1KB/s 噪声地板 + 2 次轮询迟滞，抑制单设备态/饼图态来回抖动）
  * 5) 网络连接和IP地址卡片：注入 运营商 / 出口 IP 行（数据 home_extra/status，ip.sb geoip 10min 缓存）
  * 注入通道：main.htm <script src="/luci-static/quickstart/home-extra.js?v=N">
  */
@@ -12,7 +12,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v11.1';
+	var VER = 'v12';
 
 	function el(tag, cls, text) {
 		var e = document.createElement(tag);
@@ -144,6 +144,9 @@
 
 	/* ---------- 设备流量占比饼图 ---------- */
 	var PIE_COLORS = ['#0b8fa8', '#3fb8c9', '#7fd3de', '#f2a35e', '#e05c68', '#c9ced4'];
+	/* B/s，低于此视为无实质流量（滤掉 IoT 心跳的百字节级抖动）。
+	 * 注意：这道地板同时决定饼图的分母与百分比，低速率设备不再占份额——这是期望行为。 */
+	var ACTIVE_FLOOR = 1024;
 	var pieState = { canvas: null, legend: null };
 
 	function buildPiePanel() {
@@ -258,42 +261,22 @@
 		});
 	}
 
-	/* ---------- 形态抖动抑制（v11.1）----------
-	 * 瞬时速率会让"有速率的设备数"在 1 <-> 2 之间来回跳（某台设备每隔几秒冒
-	 * 100~600 B/s 的后台流量）。如果直接拿瞬时值决定 单设备态 / 饼图态，
+	/* ---------- 形态抖动抑制（v12）----------
+	 * 瞬时速率会让"有实质流量的设备数"在 1 <-> 2 之间来回跳（某台 IoT 设备每隔
+	 * 几秒冒 100~600 B/s 的心跳流量）。若直接拿瞬时值决定 单设备态 / 饼图态，
 	 * 卡片高度会在 74px <-> 194px 之间反复弹（实测 21 秒切 4 次），
-	 * 把下面的系统信息卡每几秒顶下去又弹回来。两道闸：
-	 *   1) 噪声地板：合计速率低于 1 KB/s 的设备视为噪声，不计入活跃设备；
-	 *   2) 迟滞：连续 PIE_SWITCH_HOLD 次轮询都指向新形态才真正切换（3s 轮询 => 约 6s）。
+	 * 把下面的系统信息卡每几秒顶下去又弹回来。两道闸缺一还会抖：
+	 *   1) ACTIVE_FLOOR 噪声地板：低于此速率视为无实质流量，不计入活跃设备；
+	 *   2) 形态迟滞：连续 2 轮轮询都指向新形态才真正切换（3s 轮询 => 约 6s）。
 	 */
-	var PIE_NOISE_FLOOR = 1024;   /* B/s */
-	var PIE_SWITCH_HOLD = 2;      /* 连续命中次数 */
-	var pieMode = null;           /* 已生效形态：'single' | 'pie'，null = 尚未确定 */
-	var piePendingMode = null;    /* 待确认形态 */
-	var piePendingCount = 0;      /* 待确认形态连续命中次数 */
-
-	/* 返回"已生效"形态（可能因迟滞而暂不跟随瞬时值） */
-	function resolvePieMode(want) {
-		if (pieMode === null || want === pieMode) {
-			pieMode = want; piePendingMode = null; piePendingCount = 0;
-			return pieMode;
-		}
-		if (piePendingMode === want) {
-			piePendingCount++;
-		} else {
-			piePendingMode = want; piePendingCount = 1;
-		}
-		if (piePendingCount >= PIE_SWITCH_HOLD) {
-			pieMode = want; piePendingMode = null; piePendingCount = 0;
-		}
-		return pieMode;
-	}
+	var pieMode = null;   /* 当前已渲染形态：'single' | 'multi' */
+	var piePending = 0;   /* 连续"想做另一种形态"的轮数 */
 
 	function refreshPie() {
 		if (!document.querySelector('.he-pie-panel') || !document.querySelector('.he-pie-panel').isConnected) {
 			pieState.canvas = pieState.legend = null;
 			/* 面板重建后形态重新判定，不要带着旧面板的迟滞状态 */
-			pieMode = piePendingMode = null; piePendingCount = 0;
+			pieMode = null; piePending = 0;
 			return;
 		}
 		fetchDevices(function (devices) {
@@ -307,13 +290,22 @@
 					rate: (Number(d.downloadSpeed) || 0) + (Number(d.uploadSpeed) || 0),
 					speedStr: '↓' + (d.downloadSpeedStr || '0') + ' ↑' + (d.uploadSpeedStr || '0')
 				};
-			}).filter(function (i) { return i.rate >= PIE_NOISE_FLOOR; })
+			}).filter(function (i) { return i.rate >= ACTIVE_FLOOR; })
 			  .sort(function (a, b) { return b.rate - a.rate; });
 			/* 活跃设备 <= 1（含 0）时饼图无意义：退化为单行文本。
-			 * 判据是"有速率的设备数"：listDevices 恒返回 5 台（含上游主路由与跨网段
-			 * 旧租约），用 devices.length 会让分支永不命中；但也不能直接用瞬时值
-			 * （速率会瞬时归零、也会瞬时冒尖），必须过 resolvePieMode 的噪声地板+迟滞。 */
-			if (resolvePieMode(items.length <= 1 ? 'single' : 'pie') === 'single') {
+			 * 判据是"有实质流量的设备数"：listDevices 恒返回 5 台（含上游主路由与跨网段
+			 * 旧租约），用 devices.length 会让分支永不命中；但也不能直接用瞬时值决定形态，
+			 * 速率会瞬时归零、也会瞬时冒尖，所以要走 ACTIVE_FLOOR + 迟滞两道闸。 */
+			var want = items.length <= 1 ? 'single' : 'multi';
+			if (pieMode === null) {
+				pieMode = want; piePending = 0;
+			} else if (want !== pieMode) {
+				piePending++;
+				if (piePending >= 2) { pieMode = want; piePending = 0; }   /* 连续 2 轮才切（约 6s） */
+			} else {
+				piePending = 0;
+			}
+			if (pieMode === 'single') {
 				markPieSingle(true);
 				drawSingle(items);
 				return;
