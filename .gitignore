@@ -3,3 +3,5 @@ tests/_*
 # 回归验收脚本（转正）
 !tests/regress/
 !tests/regress/*.py
+__pycache__/
+*.pyc
