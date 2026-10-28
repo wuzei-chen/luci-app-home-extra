@@ -50,6 +50,22 @@ local SYS_FILES = table.concat({
 	"/etc/openwrt_release"
 }, " ")
 
+-- v20：物理前面板端口。实测 br-lan 的 brif 成员是 dheth0/lan1..lan4，
+-- 其中 lan1..lan4 挂在 1fb58000.switch 上（真前面板 4 口）；eth0 是 1fb50000.ethernet
+-- 的 CPU 口（10G 内部链路，承载全部交换流量），列出来只会重复计数，故不纳入。
+local PORT_NAMES = { "lan1", "lan2", "lan3", "lan4" }
+
+local function port_files()
+	local t = {}
+	for _, n in ipairs(PORT_NAMES) do
+		t[#t + 1] = "/sys/class/net/" .. n .. "/statistics/rx_bytes"
+		t[#t + 1] = "/sys/class/net/" .. n .. "/statistics/tx_bytes"
+		t[#t + 1] = "/sys/class/net/" .. n .. "/speed"
+		t[#t + 1] = "/sys/class/net/" .. n .. "/operstate"
+	end
+	return table.concat(t, " ")
+end
+
 -- 单行 awk 程序：按 FILENAME 分派，一次扫描输出多行结果。
 -- 注意：整段被包在 sh 的单引号里，**程序内不得出现单引号**（DISTRIB_DESCRIPTION
 -- 的引号由 Lua 侧剥离）。
@@ -63,20 +79,35 @@ local SYS_AWK = table.concat({
 	'FILENAME=="/proc/net/arp"{if($3=="0x2"&&$6=="br-lan")ar++;next}',
 	'FILENAME=="/tmp/dhcp.leases"{if(NF>0)le++;next}',
 	'FILENAME ~ /thermal_zone/{v=int($1/1000);if(v>tp)tp=v;next}',
-	'FILENAME ~ /rx_bytes$/{rx=$1+0;next}',
-	'FILENAME ~ /tx_bytes$/{tx=$1+0;next}',
+	-- 斜杠的转义要写 **两层**：awk 正则里的 / 必须写成 \/，而这串 awk 源码又是 Lua
+	-- 单引号字符串，所以 Lua 源码里得写 \\/（Lua 交出一个 \ 给 awk）。
+	-- 踩过的两个坑：写 \/ → Lua 吃掉反斜杠，awk 收到 //br-lan/（空正则，报 Unexpected token）；
+	-- 写 [/] → awk 的词法器遇到 / 就收尾，报 bad regex '[': Missing ']'。
+	'FILENAME ~ /\\/br-lan\\/statistics\\/rx_bytes$/{rx=$1+0;next}',
+	'FILENAME ~ /\\/br-lan\\/statistics\\/tx_bytes$/{tx=$1+0;next}',
+	-- v20：前面板四口的 rx/tx/speed/operstate，端口名从路径里剥出来
+	'FILENAME ~ /\\/net\\/lan[0-9]+\\/statistics\\/rx_bytes$/{',
+	'n=FILENAME;sub(/^.*\\/net\\//,"",n);sub(/\\/.*/,"",n);PRX[n]=$1+0;next}',
+	'FILENAME ~ /\\/net\\/lan[0-9]+\\/statistics\\/tx_bytes$/{',
+	'n=FILENAME;sub(/^.*\\/net\\//,"",n);sub(/\\/.*/,"",n);PTX[n]=$1+0;next}',
+	'FILENAME ~ /\\/net\\/lan[0-9]+\\/speed$/{',
+	'n=FILENAME;sub(/^.*\\/net\\//,"",n);sub(/\\/.*/,"",n);PSP[n]=$1+0;next}',
+	'FILENAME ~ /\\/net\\/lan[0-9]+\\/operstate$/{',
+	'n=FILENAME;sub(/^.*\\/net\\//,"",n);sub(/\\/.*/,"",n);POS[n]=$1;next}',
 	'FILENAME=="/tmp/sysinfo/model"{md="";for(q=1;q<=NF;q++)md=md (q>1?" ":"") $q;next}',
 	'FILENAME=="/etc/openwrt_release"{if($1 ~ /^DISTRIB_DESCRIPTION=/){',
 	'fw=$0;sub(/^DISTRIB_DESCRIPTION=/,"",fw)};next}',
 	'END{printf "STAT %d %d %d %d %d %d %d %d %d %d %d %d\\n",',
 	't+0,u+0,i+0,o+0,up+0,tp+0,le+0,rx+0,tx+0,mt+0,ma+0,ar+0;',
-	'printf "LOAD %s %s %s\\nMODEL %s\\nFW %s\\n",l1,l2,l3,md,fw}'
+	'printf "LOAD %s %s %s\\nMODEL %s\\nFW %s\\n",l1,l2,l3,md,fw;',
+	'for(k=1;k<=4;k++){p="lan" k;',
+	'printf "P %s %d %d %d %s\\n",p,PRX[p]+0,PTX[p]+0,PSP[p]+0,(POS[p]==""?"down":POS[p])}}'
 }, "")
 
 -- 组装 shell 命令：先用 shell 内建 for + test 过滤不存在的文件，再交给 awk。
 -- 只启动 1 个 awk 进程（for/test 是 ash 内建，不 fork）。
 local function sys_cmd()
-	return "F=''; for f in " .. SYS_FILES
+	return "F=''; for f in " .. SYS_FILES .. " " .. port_files()
 		.. '; do [ -e "$f" ] && F="$F $f"; done; '
 		.. "awk '" .. SYS_AWK .. "' $F 2>/dev/null"
 end
@@ -95,11 +126,23 @@ local function read_sysblock()
 		local load = line:match("LOAD ([^\n]*)") or ""
 		local model = line:match("MODEL ([^\n]*)") or ""
 		local firmware = line:match("FW ([^\n]*)") or ""
+		-- v20：逐行取 "P lanN rx tx speed operstate"
+		local ports = {}
+		for nm, prx, ptx, psp, pos in line:gmatch("P (%S+) (%d+) (%d+) (%-?%d+) (%S+)") do
+			ports[#ports + 1] = {
+				name = nm,
+				rx = tonumber(prx) or 0,
+				tx = tonumber(ptx) or 0,
+				speed = tonumber(psp) or -1,
+				up = (pos == "up")
+			}
+		end
 		return {
 			tcp = v[1], udp = v[2], icmp = v[3], other = v[4],
 			uptime = v[5], temp = v[6], leases = v[7],
 			rx = v[8], tx = v[9],
 			mem_total = v[10], mem_avail = v[11], arp = v[12],
+			ports = ports,
 			load = load:gsub("^%s+", ""):gsub("%s+$", ""),
 			model = model:gsub("%s+$", ""),
 			-- /etc/openwrt_release 里是 DISTRIB_DESCRIPTION='PonWrt SNAPSHOT r0-xxx'
@@ -254,6 +297,8 @@ function collect()
 		if sb.uptime and sb.uptime > 0 then out.uptime = sb.uptime end -- 秒
 		out.leases = sb.leases or 0                                   -- /tmp/dhcp.leases 行数
 		out.net = { rx = sb.rx or 0, tx = sb.tx or 0 }                -- br-lan 累计字节
+		-- v20：前面板 lan1..lan4 的累计字节/协商速率/链路状态（速率由前端按差值算）
+		if sb.ports and #sb.ports > 0 then out.ports = sb.ports end
 		if sb.model and sb.model ~= "" then out.model = sb.model end
 		if sb.firmware and sb.firmware ~= "" then out.firmware = sb.firmware end
 	end

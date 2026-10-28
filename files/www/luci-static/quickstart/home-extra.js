@@ -35,7 +35,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v19';
+	var VER = 'v20';
 
 	/* v16 骨架开关（默认开启）：
 	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
@@ -499,6 +499,9 @@
 			+ '#he13-root .he13-pl-v{display:block;font-size:14px;font-weight:600;color:#1f2d33;'
 			+ 'line-height:20px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
 			+ '#he13-root .he13-pl-v.is-off{color:#b3c1c9;font-weight:500;}'
+			/* 网口状态细条（v20）：复用 PON 细条的头/格样式，只换成 4 列 */
+			+ '#he13-root .he13-ports{grid-column:1 / -1;padding:10px 16px 12px;}'
+			+ '#he13-root .he13-grid4{margin-top:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}'
 			/* 模块设置弹层（v18）：position:fixed 挂在 #he13-root 上，祖先都是普通流容器，
 			 * 不会被 .main-right 的 overflow 裁掉（实测 rect 等于视口）。 */
 			+ '#he13-root .he13-set{position:fixed;left:0;top:0;right:0;bottom:0;z-index:3000;display:none;}'
@@ -532,6 +535,7 @@
 			+ '#he13-root .he13-kpi{grid-template-columns:1fr 1fr;}'
 			+ '#he13-root .he13-qgrid{grid-template-columns:repeat(3,1fr);}'
 			+ '#he13-root .he13-pon-grid{grid-template-columns:repeat(3,1fr);}'
+			+ '#he13-root .he13-grid4{grid-template-columns:1fr 1fr;}'
 			+ '}';
 		document.head.appendChild(s);
 	}
@@ -583,6 +587,12 @@
 		+ '    <div class="he13-pl"><span class="he13-pl-k">ONU 状态</span>'
 		+ '      <span class="he13-pl-v" id="he13-pon-onu">—</span></div>'
 		+ '  </div>'
+		+ '</div>'
+		/* v20 网口状态：LAN1-LAN4 四格，链接状态 + 协商速率 + 实时收发改（前端按差值算） */
+		+ '<div class="he13-card he13-ports" id="he13-card-ports">'
+		+ '  <div class="he13-pon-hd"><span class="he13-bar"></span><span>网口状态</span>'
+		+ '    <span class="he13-pon-st" id="he13-port-sum">—</span></div>'
+		+ '  <div class="he13-grid4" id="he13-portgrid"></div>'
 		+ '</div>'
 		+ '<div class="he13-card" id="he13-card-wan">'
 		+ '  <div class="he13-t"><span class="he13-bar"></span>WAN 出口</div>'
@@ -726,6 +736,60 @@
 			typeof pn.bias === 'number' ? pn.bias.toFixed(1) + ' mA' : '—',
 			!(typeof pn.bias === 'number') || pn.bias === 0);
 		he13SetVal('he13-pon-onu', HE13_PON_ONU[pn.onu] || pn.onu || '—', !ok);
+	}
+
+	/* ---------- 网口状态（v20）----------
+	 * 只列前面板 lan1..lan4（eth0 是 CPU 口，已排除）。每口两行：口名·协商速率 / 收·发速率。
+	 * 速率与 br-lan 同一口径：累计字节差值 ÷ 时间差；首帧没有基线显示 0 B/s，不猜。
+	 * 断开的端口不进速率计算，直接写"未连接"。 */
+	var he13PortPrev = null;
+
+	function he13UpdatePorts(list) {
+		var grid = document.getElementById('he13-portgrid');
+		if (!grid || !list || !list.length) return;
+		if (grid.getAttribute('data-built') !== '1') {
+			var h = '';
+			for (var i = 0; i < list.length; i++) {
+				var nm = String(list[i].name);
+				h += '<div class="he13-pl"><span class="he13-pl-k" id="he13-pk-' + nm + '">'
+					+ nm.toUpperCase() + '</span>'
+					+ '<span class="he13-pl-v" id="he13-pv-' + nm + '">—</span></div>';
+			}
+			grid.innerHTML = h;
+			grid.setAttribute('data-built', '1');
+		}
+		var now = Date.now(), prev = he13PortPrev;
+		var dt = prev ? (now - prev.t) / 1000 : 0;
+		var next = {}, online = 0;
+		for (var j = 0; j < list.length; j++) {
+			var p = list[j], name = String(p.name);
+			var old = prev && prev.m[name];
+			var rr = 0, rt = 0;
+			if (old && dt > 0.2) {
+				rr = Math.max(0, (p.rx - old.rx) / dt);
+				rt = Math.max(0, (p.tx - old.tx) / dt);
+			}
+			next[name] = { rx: p.rx, tx: p.tx };
+			if (p.up) online++;
+			var kn = document.getElementById('he13-pk-' + name);
+			var vn = document.getElementById('he13-pv-' + name);
+			var label = name.toUpperCase();
+			if (p.up && p.speed > 0) {
+				label += ' · ' + (p.speed >= 1000 ? (p.speed / 1000) + 'G' : p.speed + 'M');
+			}
+			if (kn && kn.textContent !== label) kn.textContent = label;
+			if (!vn) continue;
+			if (!p.up) {
+				if (vn.textContent !== '未连接') vn.textContent = '未连接';
+				if (vn.className !== 'he13-pl-v is-off') vn.className = 'he13-pl-v is-off';
+			} else {
+				var txt = '收 ' + he13Rate(rr) + '  发 ' + he13Rate(rt);
+				if (vn.textContent !== txt) vn.textContent = txt;
+				if (vn.className !== 'he13-pl-v') vn.className = 'he13-pl-v';
+			}
+		}
+		he13PortPrev = { t: now, m: next };
+		he13Txt('he13-port-sum', '在线 ' + online + ' / ' + list.length);
 	}
 
 	/* 挂载点：优先 .main-right（主题的稳定滚动容器，root 作为它的第一个子节点），
@@ -895,6 +959,7 @@
 	var HE13_MODS = [
 		{ id: 'kpi', name: '指标行', desc: '运行时间 / 终端 / 连接数 / CPU·温度·内存', sel: '#he13-root .he13-kpi' },
 		{ id: 'pon', name: 'PON 光链路', desc: '模式 / 光功率 / 模块温度电压 / ONU 状态', sel: '#he13-card-pon' },
+		{ id: 'ports', name: '网口状态', desc: 'LAN1-4 链路状态 / 协商速率 / 实时收发', sel: '#he13-card-ports' },
 		{ id: 'wan', name: 'WAN 出口', desc: '运营商 / 出口 IP / 本机速率 + 迷你曲线', sel: '#he13-card-wan' },
 		{ id: 'rate', name: '实时速率', desc: '60 点 / 3 分钟上下行面积图', sel: '#he13-card-rate' },
 		{ id: 'quick', name: '快捷入口', desc: '五个常用配置入口', sel: '#he13-card-quick' }
@@ -1195,6 +1260,7 @@
 			if (!d || typeof d !== 'object') return;
 
 			if (d.pon) he13UpdatePon(d.pon);
+			if (d.ports && d.ports.length) he13UpdatePorts(d.ports);
 
 			var up = (typeof d.uptime === 'number' && d.uptime > 0) ? he13Uptime(d.uptime) : '—';
 			he13Txt('he13-uptime', up);
