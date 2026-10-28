@@ -27,8 +27,9 @@ uci -q add_list quickstart.@modules[0].module='remoteDomain'
 uci -q add_list quickstart.@modules[0].module='diskInfo'
 UCI
 if /etc/init.d/quickstart enabled 2>/dev/null; then
-	sh /etc/uci-defaults/40-home-extra
+	sh /etc/uci-defaults/40-home-extra || exit 1
 fi
+rm -f /etc/uci-defaults/40-home-extra
 if [ -f /etc/uci-defaults/40-home-extra ]; then
 	echo "FATAL: /etc/uci-defaults/40-home-extra 删除失败（异常，需人工排查）"
 	exit 1
