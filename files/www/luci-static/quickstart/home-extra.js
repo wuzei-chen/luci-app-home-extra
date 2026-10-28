@@ -1,10 +1,22 @@
-/* home-extra.js — quickstart 首页增强 V2（2026-10-27, v9）
+/* home-extra.js — quickstart 首页增强 V3（2026-10-28, v13）
+ * ---------------------------------------------------------------------------
+ * v12 既有行为（默认路径，一个像素都不动）：
  * 1) 第一排卡片行整行隐藏（网络向导/NPU 卡不放首页，NPU 信息在状态页）
  * 2) 剔除：官网外链 / 测速 / 商店卡 / NAS 面板 / 网络接口状态
  * 3) 网络流量面板：v11 起恢复原生高度（移除 canvas 钳制，仅保留标题间距微调）
  * 4) 设备流量占比饼图：legend 显示 类型图标 + 品牌 + 主机名；活跃设备 <=1 时退化为单行文本
  *    （v12：1KB/s 噪声地板 + 2 次轮询迟滞，抑制单设备态/饼图态来回抖动）
  * 5) 网络连接和IP地址卡片：注入 运营商 / 出口 IP 行（数据 home_extra/status，ip.sb geoip 10min 缓存）
+ *
+ * v13 新增（**全部挂在 ?he13=1 开关下，不带该参数时下面的代码一行都不会执行**）：
+ * 6) 「爱快骨架」：隐藏原生首排/流量卡/IP 卡/饼图面板/快捷行/系统信息卡（只 display:none，
+ *    不 remove 节点 —— 原生 Vue 仍在这些节点上轮询，删节点会让它抛错），
+ *    在最前面插入 #he13-root，用 CSS Grid 排 5 个区块：
+ *    KPI 行（运行时间 / ARP 可达·租约 / 连接数 / CPU·温度·内存）、左 WAN 卡、右监控占位、
+ *    快捷图标网格、底部型号·固件·系统时间。
+ * 7) 口径红线：终端数只写「ARP 可达 N · 租约 M」；流量标签一律带「本机」；数字全部来自
+ *    home_extra/status 真实字段，不估算。
+ *
  * 注入通道：main.htm <script src="/luci-static/quickstart/home-extra.js?v=N">
  */
 (function () {
@@ -12,7 +24,10 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v12';
+	var VER = 'v13';
+
+	/* v13 骨架开关：验收期每次显式带 ?he13=1，不做 cookie/localStorage 持久化 */
+	var HE13 = location.search.indexOf('he13=1') >= 0;
 
 	function el(tag, cls, text) {
 		var e = document.createElement(tag);
@@ -364,6 +379,293 @@
 		});
 	}
 
+	/* =======================================================================
+	 * v13「爱快骨架」—— 仅 ?he13=1 启用（HE13 === false 时以下函数永不调用）
+	 * ======================================================================= */
+
+	var HE13_CYAN = '#0b8fa8';
+
+	/* 骨架 CSS：全部规则都以 html.he13 或 #he13-root 限定，不带参数时不注入，
+	 * 因此默认路径的样式表与 v12 逐字节一致。 */
+	function injectCss13() {
+		if (document.documentElement.classList) document.documentElement.classList.add('he13');
+		if (document.getElementById('he13-css')) return;
+		var s = el('style'); s.id = 'he13-css';
+		s.textContent = ''
+			/* 隐藏原生块：只 display:none，不 remove（原生 Vue 仍在跑） */
+			+ 'html.he13 .card-container,'
+			+ 'html.he13 .network-container.align-c,'
+			+ 'html.he13 .system,'
+			+ 'html.he13 .he-pie-panel{display:none !important;}'
+			/* 骨架栅格 */
+			+ '#he13-root{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 12px;}'
+			+ '#he13-root .he13-card{background:#fff;border-radius:12px;box-sizing:border-box;padding:12px 16px;}'
+			+ '#he13-root .he13-kpi{grid-column:1 / -1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}'
+			+ '#he13-root .he13-k{display:flex;flex-direction:column;justify-content:center;height:88px;padding:10px 14px;}'
+			+ '#he13-root .he13-k-lab{font-size:12px;color:#8aa0aa;line-height:16px;}'
+			+ '#he13-root .he13-k-val{font-size:18px;font-weight:600;color:#1f2d33;line-height:26px;'
+			+ 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+			+ '#he13-root .he13-k-sub{font-size:12px;color:#8aa0aa;line-height:16px;'
+			+ 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+			/* 卡片标题 */
+			+ '#he13-root .he13-t{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;'
+			+ 'color:#1f2d33;margin-bottom:8px;}'
+			+ '#he13-root .he13-bar{width:3px;height:14px;border-radius:2px;background:' + HE13_CYAN + ';}'
+			+ '#he13-root .he13-tag{font-size:11px;font-weight:500;color:' + HE13_CYAN + ';'
+			+ 'background:#e6f4f7;border-radius:8px;padding:1px 7px;}'
+			/* 键值行 */
+			+ '#he13-root .he13-row{display:flex;align-items:center;justify-content:space-between;'
+			+ 'font-size:13px;line-height:26px;}'
+			+ '#he13-root .he13-lb{color:#8aa0aa;flex:none;}'
+			+ '#he13-root .he13-vl{color:#1f2d33;font-weight:500;max-width:62%;overflow:hidden;'
+			+ 'text-overflow:ellipsis;white-space:nowrap;text-align:right;}'
+			/* 监控占位（S1 不画图，S2 换 canvas） */
+			+ '#he13-root .he13-ph{height:150px;border-radius:10px;border:1px dashed #cfdde4;'
+			+ 'background:#f8fbfc;display:flex;align-items:center;justify-content:center;'
+			+ 'color:#a8bcc6;font-size:13px;}'
+			/* 快捷入口网格 */
+			+ '#he13-root .he13-quick{grid-column:1 / -1;padding:10px 16px 12px;}'
+			+ '#he13-root .he13-qgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}'
+			+ '#he13-root .he13-q{display:flex;flex-direction:column;align-items:center;justify-content:center;'
+			+ 'gap:4px;height:62px;border-radius:10px;background:#f3f7fd;border:1px solid #e8eef4;'
+			+ 'cursor:pointer;font-size:12px;color:#33505c;user-select:none;}'
+			+ '#he13-root .he13-q:hover{border-color:' + HE13_CYAN + ';color:' + HE13_CYAN + ';}'
+			+ '#he13-root .he13-q-ic{display:flex;align-items:center;justify-content:center;height:22px;}'
+			+ '#he13-root .he13-q-ic svg{width:22px;height:22px;}'
+			+ '#he13-root .he13-q-tx{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+			/* 底部一行 */
+			+ '#he13-root .he13-foot{grid-column:1 / -1;display:flex;align-items:center;'
+			+ 'justify-content:space-between;font-size:12px;color:#8aa0aa;padding:0 4px;line-height:40px;}'
+			+ '#he13-root .he13-foot span{max-width:34%;overflow:hidden;text-overflow:ellipsis;'
+			+ 'white-space:nowrap;}'
+			/* 窄屏：KPI 两列 */
+			+ '@media screen and (max-width:768px){'
+			+ '#he13-root{grid-template-columns:1fr;}'
+			+ '#he13-root .he13-kpi{grid-template-columns:1fr 1fr;}'
+			+ '#he13-root .he13-qgrid{grid-template-columns:repeat(3,1fr);}'
+			+ '}';
+		document.head.appendChild(s);
+	}
+
+	/* 骨架静态结构。注意：终端数文案固定为「ARP 可达 N · 租约 M」，
+	 * 页面任何地方都不出现"N 台设备在网"这类口径（旁挂模式看不到家庭终端数，
+	 * 只有 ARP 邻居表与 DHCP 租约两份可核实的证据）。 */
+	var HE13_HTML = ''
+		+ '<div class="he13-kpi">'
+		+ '  <div class="he13-card he13-k">'
+		+ '    <div class="he13-k-lab">运行时间</div>'
+		+ '    <div class="he13-k-val" id="he13-uptime">—</div>'
+		+ '    <div class="he13-k-sub">设备已启动</div>'
+		+ '  </div>'
+		+ '  <div class="he13-card he13-k">'
+		+ '    <div class="he13-k-lab">终端</div>'
+		+ '    <div class="he13-k-val" id="he13-term">ARP 可达 — · 租约 —</div>'
+		+ '    <div class="he13-k-sub">ARP 邻居表 + DHCP 租约</div>'
+		+ '  </div>'
+		+ '  <div class="he13-card he13-k">'
+		+ '    <div class="he13-k-lab">连接数</div>'
+		+ '    <div class="he13-k-val" id="he13-conn">—</div>'
+		+ '    <div class="he13-k-sub" id="he13-conn-sub">TCP — · UDP — · ICMP —</div>'
+		+ '  </div>'
+		+ '  <div class="he13-card he13-k">'
+		+ '    <div class="he13-k-lab">CPU · 温度 · 内存</div>'
+		+ '    <div class="he13-k-val" id="he13-load">—</div>'
+		+ '    <div class="he13-k-sub">实时采样</div>'
+		+ '  </div>'
+		+ '</div>'
+		+ '<div class="he13-card">'
+		+ '  <div class="he13-t"><span class="he13-bar"></span>WAN 出口</div>'
+		+ '  <div class="he13-row"><span class="he13-lb">运营商</span><span class="he13-vl" id="he13-isp">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">出口 IP</span><span class="he13-vl" id="he13-ip">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">接入方式</span><span class="he13-vl">旁挂桥接</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">运行时间</span><span class="he13-vl" id="he13-ut2">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">本机下行</span><span class="he13-vl" id="he13-rx">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">本机上行</span><span class="he13-vl" id="he13-tx">—</span></div>'
+		+ '</div>'
+		+ '<div class="he13-card">'
+		+ '  <div class="he13-t"><span class="he13-bar"></span>实时速率<span class="he13-tag">本机</span></div>'
+		+ '  <div class="he13-ph">图表 S2 实现</div>'
+		+ '  <div class="he13-row"><span class="he13-lb">上下行面积图 · 60 点历史</span>'
+		+ '<span class="he13-vl he13-lb">S2</span></div>'
+		+ '</div>'
+		+ '<div class="he13-card he13-quick">'
+		+ '  <div class="he13-t"><span class="he13-bar"></span>快捷入口</div>'
+		+ '  <div class="he13-qgrid" id="he13-qgrid"></div>'
+		+ '</div>'
+		+ '<div class="he13-foot">'
+		+ '  <span id="he13-model">—</span>'
+		+ '  <span id="he13-fw">—</span>'
+		+ '  <span id="he13-time">—</span>'
+		+ '</div>';
+
+	var he13PrevNet = null;   /* 上一轮 br-lan 累计字节，用于算本机速率 */
+	var HE13_QUICK_LABELS = ['内网配置', '终端', '固件更新', 'DNS配置', '软件源配置'];
+
+	function he13Txt(id, text) {
+		var e = document.getElementById(id);
+		if (e && e.textContent !== text) e.textContent = text;
+	}
+
+	/* 0.0 B/s ~ MB/s */
+	function he13Rate(v) {
+		if (!(v > 0)) return '0 B/s';
+		if (v >= 1048576) return (v / 1048576).toFixed(1) + ' MB/s';
+		if (v >= 1024) return (v / 1024).toFixed(1) + ' KB/s';
+		return Math.round(v) + ' B/s';
+	}
+
+	function he13Uptime(sec) {
+		var s = Math.floor(sec);
+		if (!(s > 0)) return '—';
+		var d = Math.floor(s / 86400);
+		var h = Math.floor((s % 86400) / 3600);
+		var m = Math.floor((s % 3600) / 60);
+		if (d > 0) return d + '天 ' + h + '小时';
+		if (h > 0) return h + '小时 ' + m + '分';
+		return m + '分 ' + (s % 60) + '秒';
+	}
+
+	/* 挂载点：优先 .page-container（quickstart 页面根），逐级降级，全部取不到就静默返回 */
+	function he13Host() {
+		return document.querySelector('.page-container')
+			|| document.querySelector('.main-right')
+			|| document.getElementById('app');
+	}
+
+	function he13Build() {
+		if (document.getElementById('he13-root')) return true;
+		var host = he13Host();
+		if (!host) return false;
+		var root = el('div');
+		root.id = 'he13-root';
+		root.innerHTML = HE13_HTML;
+		host.insertBefore(root, host.firstChild);
+		return true;
+	}
+
+	/* 隐藏原生流量卡 + 原生 IP 卡：两者同处一个 .network-container 行。
+	 * 用内联 !important（而不是删节点）——原生 Vue 仍在这两个节点上轮询，删了会抛错；
+	 * 内联优先级也高于 Vue 的 :style 绑定，不会被它刷回去。 */
+	function he13HideNative() {
+		var rows = document.querySelectorAll('.network-container');
+		for (var i = 0; i < rows.length; i++) {
+			var n = rows[i];
+			if (n.classList.contains('align-c')) continue;   /* 快捷行由 CSS 规则隐藏 */
+			if (n.style.display !== 'none') n.style.setProperty('display', 'none', 'important');
+		}
+	}
+
+	/* 快捷入口：从原生 Item.vue 渲染出的 .item 上"搬" 5 个入口。
+	 * 不移动原节点（避免破坏 Vue 的 vdom 父链），而是克隆图标 + 转发点击：
+	 * cell 被点时调用 src.click()，由原生 Vue 的 @click 处理器照常执行，
+	 * 因此入口行为、路由、弹窗全部沿用现有实现，没有硬编码链接。 */
+	function he13Quick() {
+		var grid = document.getElementById('he13-qgrid');
+		if (!grid) return;
+		if (grid.children.length) return;
+		var nodes = [];
+		var all = document.querySelectorAll('.item_container .item');
+		for (var i = 0; i < all.length; i++) nodes.push(all[i]);
+		if (!nodes.length) return;
+		var picked = [];
+		function take(label) {
+			for (var k = 0; k < nodes.length; k++) {
+				if (picked.indexOf(nodes[k]) !== -1) continue;
+				var t = (nodes[k].textContent || '').replace(/\s+/g, '');
+				if (t.indexOf(label) === 0) { picked.push(nodes[k]); return; }
+			}
+		}
+		HE13_QUICK_LABELS.forEach(take);
+		for (var j = 0; j < nodes.length && picked.length < 5; j++) {
+			if (picked.indexOf(nodes[j]) === -1) picked.push(nodes[j]);
+		}
+		picked.slice(0, 5).forEach(function (src) {
+			var cell = el('div', 'he13-q');
+			var ico = el('span', 'he13-q-ic');
+			var svg = src.querySelector('svg');
+			if (svg) ico.appendChild(svg.cloneNode(true));
+			cell.appendChild(ico);
+			var label = (src.textContent || '').replace(/\s+/g, ' ').trim();
+			cell.appendChild(el('span', 'he13-q-tx', label));
+			cell.addEventListener('click', function () {
+				try { src.click(); } catch (e) { /* 原入口不存在可点目标则静默 */ }
+			});
+			grid.appendChild(cell);
+		});
+	}
+
+	/* 本机速率：用两轮轮询之间 br-lan 累计字节的差值算，首轮没有基线就留 — */
+	function he13Rates(net) {
+		if (!net || typeof net.rx !== 'number' || typeof net.tx !== 'number') return;
+		var now = Date.now();
+		if (he13PrevNet && now > he13PrevNet.t) {
+			var dt = (now - he13PrevNet.t) / 1000;
+			var drx = net.rx - he13PrevNet.rx;   /* 收 = 本机下行 */
+			var dtx = net.tx - he13PrevNet.tx;   /* 发 = 本机上行 */
+			if (dt > 0 && drx >= 0 && dtx >= 0) {
+				he13Txt('he13-rx', he13Rate(drx / dt));
+				he13Txt('he13-tx', he13Rate(dtx / dt));
+			}
+		}
+		he13PrevNet = { rx: net.rx, tx: net.tx, t: now };
+	}
+
+	/* 刷新骨架数字。数据全部来自 home_extra/status：
+	 * cpu 首轮为 null（后端无基线），此处显示 — 而不是 0。 */
+	function he13Update() {
+		fetchStatus(function (d) {
+			if (!d || typeof d !== 'object') return;
+
+			var up = (typeof d.uptime === 'number' && d.uptime > 0) ? he13Uptime(d.uptime) : '—';
+			he13Txt('he13-uptime', up);
+			he13Txt('he13-ut2', up);
+
+			var arp = (typeof d.clients === 'number') ? String(d.clients) : '—';
+			var lea = (typeof d.leases === 'number') ? String(d.leases) : '—';
+			he13Txt('he13-term', 'ARP 可达 ' + arp + ' · 租约 ' + lea);
+
+			var c = d.conn;
+			if (c && typeof c.total === 'number') {
+				he13Txt('he13-conn', String(c.total));
+				he13Txt('he13-conn-sub', 'TCP ' + c.tcp + ' · UDP ' + c.udp + ' · ICMP ' + c.icmp);
+			}
+
+			var cpu = (typeof d.cpu === 'number') ? 'CPU ' + d.cpu + '%' : 'CPU —';
+			var temp = (typeof d.temp === 'number' && d.temp > 0) ? '温度 ' + d.temp + '℃' : '温度 —';
+			var mem = '内存 —';
+			if (d.mem && d.mem.total > 0) {
+				mem = '内存 ' + Math.round((d.mem.total - d.mem.avail) / d.mem.total * 100) + '%';
+			}
+			he13Txt('he13-load', cpu + ' · ' + temp + ' · ' + mem);
+
+			var w = d.wan;
+			if (w && w.ip) {
+				he13Txt('he13-isp', (w.isp || '未知') + (w.city ? '（' + w.city + '）' : ''));
+				he13Txt('he13-ip', w.ip);
+			} else {
+				he13Txt('he13-isp', '未获取');
+				he13Txt('he13-ip', '未获取');
+			}
+
+			he13Rates(d.net);
+
+			if (d.model) he13Txt('he13-model', d.model);
+			if (d.firmware) he13Txt('he13-fw', d.firmware);
+			if (d.ltime) he13Txt('he13-time', d.ltime);
+		});
+	}
+
+	/* 每次 mount（2s）跑一遍：建骨架 → 压原生 → 补快捷 → 刷数字。
+	 * 全程判空后静默 return，不抛异常打断整页。 */
+	function he13Mount() {
+		if (!HE13) return;
+		injectCss13();
+		if (!he13Build()) return;
+		he13HideNative();
+		he13Quick();
+		he13Update();
+	}
+
 	/* ---------- 主循环 ---------- */
 	function mount() {
 		injectCss();
@@ -371,11 +673,13 @@
 		hidePanels();
 		buildPiePanel();
 		injectWanRows();
+		if (HE13) he13Mount();   /* 不带 ?he13=1 时这一行什么都不做 */
 	}
 	function boot() {
 		mount();
 		setInterval(mount, 2000);
 		setInterval(function () {
+			if (HE13) return;    /* v13：新骨架不跑 v12 饼图轮询 */
 			if (document.querySelector('.he-pie-panel')) refreshPie();
 		}, 3000);
 	}
