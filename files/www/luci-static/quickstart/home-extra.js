@@ -35,7 +35,7 @@
 	if (window.__homeExtraInjected) return;
 	window.__homeExtraInjected = true;
 
-	var VER = 'v21';
+	var VER = 'v22';
 
 	/* v16 骨架开关（默认开启）：
 	 * 1) URL 带 he13=1 / he13=0（search、hash 都认）→ 立即生效并写 sessionStorage；
@@ -460,6 +460,14 @@
 			+ '#he13-root .he13-mono{font-family:ui-monospace,Menlo,Consolas,"DejaVu Sans Mono",monospace;'
 			+ 'font-size:12px;letter-spacing:-0.2px;}'
 			+ '#he13-root .he13-vl.is-off{color:#b3c1c9;font-weight:500;}'
+			/* 出口 IP 的显隐开关（v22）：纯文字的迷你按钮，不抢视觉 */
+			+ '#he13-root .he13-eye{flex:none;margin-left:8px;font-size:12px;font-weight:400;'
+			+ 'color:#8aa0aa;cursor:pointer;user-select:none;line-height:24px;}'
+			+ '#he13-root .he13-eye:hover{color:' + HE13_CYAN + ';}'
+			/* 该行有第三个 flex 项（显隐按钮）后，space-between 会把 IP 挤到中间，
+			 * 与按钮之间留出多余空白。用 auto 左外边距吃掉全部剩余空间，
+			 * IP 与按钮就贴在一起了（只影响这一行）。 */
+			+ '#he13-root #he13-ip{margin-left:auto;}'
 			/* 自绘面积图容器：canvas 位图尺寸由 JS 按 dpr 设置，CSS 只管布局盒子 */
 			+ '#he13-root .he13-chart{position:relative;height:' + HE13_AREA_H + 'px;}'
 			+ '#he13-root .he13-chart canvas{display:block;width:100%;height:' + HE13_AREA_H + 'px;}'
@@ -601,7 +609,10 @@
 		+ '<div class="he13-card" id="he13-card-wan">'
 		+ '  <div class="he13-t"><span class="he13-bar"></span>WAN 出口</div>'
 		+ '  <div class="he13-row"><span class="he13-lb">运营商</span><span class="he13-vl" id="he13-isp">—</span></div>'
-		+ '  <div class="he13-row"><span class="he13-lb">出口 IP</span><span class="he13-vl" id="he13-ip">—</span></div>'
+		+ '  <div class="he13-row"><span class="he13-lb">出口 IP</span><span class="he13-vl" id="he13-ip">—</span>'
+		/* v22：出口 IP 一键隐藏（投屏/截图/远程协助时用）。状态存 localStorage，
+		 * 点击文字本身切换，不额外占位置。 */
+		+ '    <span class="he13-eye" id="he13-ip-eye" title="隐藏出口 IP">隐藏</span></div>'
 		/* v21 IPv6 三行：全局地址 / 默认网关 / eth0 链路本地。地址最长 39 字符，
 		 * 卡片右列放不下 —— 省略号截断 + title 给全文，鼠标悬停可看完整地址。 */
 		+ '  <div class="he13-row"><span class="he13-lb">IPv6 地址</span>'
@@ -820,13 +831,53 @@
 		if (e.className !== cls) e.className = cls;
 	}
 
+	/* ---------- 出口 IP 显隐（v22）----------
+	 * 只在**渲染层**打码，数据照旧取，后端行为不变。状态存 localStorage，刷新/跨会话保持。
+	 * IPv6 全局地址属于同一类信息，跟着一起隐藏；链路本地 fe80 不受影响（不是公网地址，
+	 * 排查时有用）。 */
+	var he13IpHidden = false;
+	try { he13IpHidden = localStorage.getItem('he13.hideIp') === '1'; } catch (e) { he13IpHidden = false; }
+
+	var he13WanIp = '';
+	var he13V6Raw = null;
+
+	function he13PaintIp() {
+		var e = document.getElementById('he13-ip');
+		if (e) {
+			var t = he13WanIp || '未获取';
+			if (he13WanIp && he13IpHidden) t = '已隐藏';
+			if (e.textContent !== t) e.textContent = t;
+			var cls = 'he13-vl' + ((!he13WanIp || he13IpHidden) ? ' is-off' : '');
+			if (e.className !== cls) e.className = cls;
+			if (he13IpHidden && he13WanIp) e.setAttribute('title', '点击右侧「显示」恢复');
+			else e.removeAttribute('title');
+		}
+		var eye = document.getElementById('he13-ip-eye');
+		if (eye) {
+			var lbl = he13IpHidden ? '显示' : '隐藏';
+			if (eye.textContent !== lbl) eye.textContent = lbl;
+			if (eye.getAttribute('title') !== (he13IpHidden ? '显示出口 IP' : '隐藏出口 IP')) {
+				eye.setAttribute('title', he13IpHidden ? '显示出口 IP' : '隐藏出口 IP');
+			}
+		}
+	}
+
 	function he13UpdateV6(v6) {
-		var hasA = !!(v6 && v6.addr);
-		var hasG = !!(v6 && v6.gw);
-		var hasL = !!(v6 && v6.ll);
-		he13SetRow('he13-v6', hasA ? v6.addr : '未获取',
-			hasA ? (v6.addr + (v6.plen ? '/' + v6.plen : '')) : '上游未下发全局 IPv6 地址（无 RA/PD）',
-			!hasA);
+		he13V6Raw = v6 || {};
+		he13PaintV6();
+	}
+
+	function he13PaintV6() {
+		var v6 = he13V6Raw || {};
+		var hasA = !!v6.addr;
+		var hasG = !!v6.gw;
+		var hasL = !!v6.ll;
+		var masked = hasA && he13IpHidden;
+		he13SetRow('he13-v6', masked ? '已隐藏' : (hasA ? v6.addr : '未获取'),
+			masked ? '已隐藏（点「显示」恢复）'
+				: hasA ? (v6.addr + (v6.plen ? '/' + v6.plen : ''))
+					: '上游未下发全局 IPv6 地址（无 RA/PD）',
+			!hasA || masked);
 		he13SetRow('he13-v6gw', hasG ? v6.gw : '无',
 			hasG ? v6.gw : '没有 IPv6 默认路由', !hasG);
 		he13SetRow('he13-v6ll', hasL ? v6.ll : '无', hasL ? 'eth0 链路本地地址' : '', !hasL);
@@ -861,6 +912,16 @@
 		 * 原生模块，勾选无效。改为打开自绘面板。 */
 		var gear = document.getElementById('he13-gear');
 		if (gear) gear.onclick = function () { he13BuildSet(); he13SetOpen(true); };
+		/* 出口 IP 显隐（v22）：点文字切换，状态落 localStorage。he13Build 在 root 已存在时
+		 * 提前返回，故这里只会绑一次；重复赋值 onclick 本身也是幂等的。 */
+		var eye = document.getElementById('he13-ip-eye');
+		if (eye) eye.onclick = function (ev) {
+			if (ev && ev.stopPropagation) ev.stopPropagation();
+			he13IpHidden = !he13IpHidden;
+			try { localStorage.setItem('he13.hideIp', he13IpHidden ? '1' : '0'); } catch (e) {}
+			he13PaintIp();
+			he13PaintV6();
+		};
 		var mask = document.getElementById('he13-set-mask');
 		if (mask) mask.onclick = function () { he13SetOpen(false); };
 		var x = document.getElementById('he13-set-x');
@@ -1335,11 +1396,12 @@
 			var w = d.wan;
 			if (w && w.ip) {
 				he13Txt('he13-isp', (w.isp || '未知') + (w.city ? '（' + w.city + '）' : ''));
-				he13Txt('he13-ip', w.ip);
+				he13WanIp = w.ip;
 			} else {
 				he13Txt('he13-isp', '未获取');
-				he13Txt('he13-ip', '未获取');
+				he13WanIp = '';
 			}
+			he13PaintIp();
 
 			/* 只登记快照，速率交给 3s 时钟上的 he13Sample() 统一算（单一数据源） */
 			if (d.net && typeof d.net.rx === 'number' && typeof d.net.tx === 'number') {
